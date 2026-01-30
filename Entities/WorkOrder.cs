@@ -1,0 +1,38 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace WorkOrderApplication.API.Entities;
+
+/// <summary>
+/// ✅ Entity หลักสำหรับ Work Order (คำสั่งการผลิต)
+/// เก็บข้อมูลเกี่ยวกับการสั่งผลิต เช่น เลขที่งาน, ไลน์การผลิต, โมเดลสินค้า, จำนวนผลิต,
+/// ผู้สร้าง/ผู้แก้ไข, วันเวลา และความสัมพันธ์กับ Material และ OrderProcess
+/// </summary>
+public class WorkOrder
+{
+    // -------------------- Primary Key --------------------
+    public int Id { get; set; }  // Primary Key ของตาราง WorkOrders
+
+    // -------------------- ข้อมูลพื้นฐาน --------------------
+    public string WorkOrderNumber { get; set; } = default!; // รหัส WorkOrder (Unique)
+    public string LineName { get; set; } = default!;        // ชื่อไลน์การผลิต
+    public string ModelName { get; set; } = default!;       // ชื่อโมเดลสินค้า
+    public int Quantity { get; set; }                       // จำนวนที่จะผลิต
+
+    // -------------------- ความสัมพันธ์กับ Material --------------------
+    public ICollection<Material> Materials { get; set; } = new List<Material>();  // รายการวัสดุที่เกี่ยวข้องกับ WorkOrder
+
+    // -------------------- วันเวลา --------------------
+    public DateTime CreatedDate { get; set; }               // วันที่สร้าง WorkOrder
+    public DateTime? UpdatedDate { get; set; }              // วันที่แก้ไขล่าสุด (nullable)
+
+    // -------------------- ความสัมพันธ์กับ User (ผู้สร้าง) --------------------
+    public int CreatedByUserId { get; set; }                // FK → User.Id (ผู้สร้าง)
+    public User CreatedBy { get; set; } = default!;         // Navigation Property ไปยัง User ผู้สร้าง
+
+    // -------------------- ความสัมพันธ์กับ User (ผู้แก้ไข) --------------------
+    public int? UpdatedByUserId { get; set; }               // FK → User.Id (ผู้แก้ไขล่าสุด) (nullable)
+    public User? UpdatedBy { get; set; }                    // Navigation Property ไปยัง User ผู้แก้ไขล่าสุด
+
+    // -------------------- ความสัมพันธ์กับ OrderProcess --------------------
+    public ICollection<OrderProcess> OrderProcesses { get; set; } = new List<OrderProcess>(); // แต่ละ WorkOrder อาจมีหลายขั้นตอนการดำเนินการ (OrderProcess)
+}

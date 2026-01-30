@@ -1,0 +1,145 @@
+using Microsoft.EntityFrameworkCore;
+using WorkOrderApplication.API.Data;
+using WorkOrderApplication.API.Entities;
+using WorkOrderApplication.API.Dtos;
+using WorkOrderApplication.API.Mappings;
+using WorkOrderApplication.API.Validators;
+using FluentValidation;
+
+namespace WorkOrderApplication.API.Endpoints;
+
+public static class WorkOrderEndpoints
+{
+    public static RouteGroupBuilder MapWorkOrderEndpoints(this RouteGroupBuilder group)
+    {
+        // -------------------- GET: /api/workorders --------------------
+        group.MapGet("/", async (AppDbContext db) =>
+        {
+            var workOrders = await db.WorkOrders
+                .Include(w => w.CreatedBy)
+                .OrderByDescending(w => w.CreatedDate)
+                .Select(w => w.ToListDto())
+                .ToListAsync();
+
+            return Results.Ok(workOrders);
+        })
+        .WithName("GetWorkOrders")
+        .Produces<List<WorkOrderListDto>>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status500InternalServerError)
+        .WithOpenApi();
+
+        // -------------------- GET: /api/workorders/{id} --------------------
+        group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
+        {
+            var workOrder = await db.WorkOrders
+                .Include(w => w.CreatedBy)
+                .Include(w => w.UpdatedBy)
+                .Include(w => w.Materials)
+                .Include(w => w.OrderProcesses)
+                .FirstOrDefaultAsync(w => w.Id == id);
+
+            return workOrder is null
+                ? Results.NotFound()
+                : Results.Ok(workOrder.ToDetailsDto());
+        })
+        .WithName("GetWorkOrderById")
+        .Produces<WorkOrderDetailsDto>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status500InternalServerError)
+        .WithOpenApi();
+
+        // -------------------- POST: /api/workorders --------------------
+        group.MapPost("/", async (
+            WorkOrderCreateDto dto,
+            AppDbContext db,
+            IValidator<WorkOrderCreateDto> validator) =>
+        {
+            var validation = await validator.ValidateAsync(dto);
+            if (!validation.IsValid)
+                return Results.BadRequest(validation.Errors);
+
+            var workOrder = dto.ToEntity();
+            db.WorkOrders.Add(workOrder);
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/api/workorders/{workOrder.Id}", workOrder.ToDetailsDto());
+        })
+        .WithName("CreateWorkOrder")
+        .Produces<WorkOrderDetailsDto>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status500InternalServerError)
+        .WithOpenApi();
+
+    // -------------------- PUT: /api/workorders/{id} --------------------
+    group.MapPut("/{id:int}", async (
+        int id,
+        WorkOrderUpdateDto dto,
+        AppDbContext db,
+        IValidator<WorkOrderUpdateDto> validator) =>
+    {
+        // 1. Validate
+        var validation = await validator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return Results.BadRequest(validation.Errors);
+
+        // 2. Find WorkOrder (รวม Materials)
+        var workOrder = await db.WorkOrders
+            .Include(w => w.Materials)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workOrder is null)
+            return Results.NotFound();
+
+        // 3. Update Entity จาก DTO
+        workOrder.UpdateFromDto(dto);
+
+        await db.SaveChangesAsync();
+
+        // 4. โหลดใหม่พร้อม Navigation Properties
+        var updated = await db.WorkOrders
+            .Include(w => w.CreatedBy)     // ✅ สำคัญ
+            .Include(w => w.UpdatedBy)     // ✅ สำคัญ
+            .Include(w => w.Materials)
+            .Include(w => w.OrderProcesses)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (updated is null)
+            return Results.NotFound();
+
+        // 5. Mapping → Dto
+        return Results.Ok(updated.ToDetailsDto());
+    })
+    .WithName("UpdateWorkOrder")
+    .Produces<WorkOrderDetailsDto>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound)
+    .ProducesProblem(StatusCodes.Status500InternalServerError)
+    .WithOpenApi();
+
+
+        // -------------------- DELETE: /api/workorders/{id} --------------------
+        group.MapDelete("/{id:int}", async (int id, AppDbContext db) =>
+        {
+            var workOrder = await db.WorkOrders
+                .Include(w => w.Materials)
+                .Include(w => w.CreatedBy)
+                .Include(w => w.UpdatedBy)
+                .FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workOrder is null)
+                return Results.NotFound();
+
+            db.WorkOrders.Remove(workOrder);
+            await db.SaveChangesAsync();
+
+            return Results.NoContent();
+        })
+        .WithName("DeleteWorkOrder")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status500InternalServerError)
+        .WithOpenApi();
+
+        return group;
+    }
+}

@@ -1,0 +1,26 @@
+namespace WorkOrderApplication.API.Dtos;
+
+// -------------------- รายละเอียดเต็ม --------------------
+public record PreparingMaterialDetailsDto(
+    int Id,
+    int PreparingProcessId,
+    int MaterialId,
+    string MaterialNumber,
+    string Description,
+    int PreparedQty,
+    string Unit
+);
+
+// -------------------- ใช้สำหรับ Insert / Update --------------------
+public record PreparingMaterialUpsertDto(
+    int MaterialId,
+    int PreparedQty
+);
+
+// -------------------- สำหรับ List / Table View --------------------
+public record PreparingMaterialListDto(
+    int Id,
+    int MaterialId,
+    string MaterialNumber,
+    int PreparedQty
+);
