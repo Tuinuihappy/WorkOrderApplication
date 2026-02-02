@@ -13,18 +13,51 @@ public static class OrderProcessEndpoints
     public static RouteGroupBuilder MapOrderProcessEndpoints(this RouteGroupBuilder group)
     {
         // -------------------- GET /api/orderprocesses --------------------
-        group.MapGet("/", async (AppDbContext db, int page = 1, int pageSize = 10) =>
+        group.MapGet("/", async (
+            AppDbContext db,
+            int page = 1,
+            int pageSize = 10,
+            int? search = null,
+            string? status = null,
+            string? fromDate = null,
+            string? toDate = null,
+            string? workOrderNumber = null,
+            string? createdByName = null,
+            string? lineName = null,
+            string? sourceStation = null,
+            string? destinationStation = null,
+            string? executeVehicleName = null
+        ) =>
         {
             // Validate pagination parameters
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
             if (pageSize > 100) pageSize = 100; // Max page size limit
 
-            // Get total count
-            var totalCount = await db.OrderProcesses.CountAsync();
+            // Parse date parameters
+            DateTime? fromDateParsed = null;
+            DateTime? toDateParsed = null;
 
-            // Get paginated data
-            var orderProcesses = await db.OrderProcesses.AsNoTracking()
+            if (!string.IsNullOrWhiteSpace(fromDate))
+            {
+                if (DateTime.TryParse(fromDate, out var parsedFrom))
+                {
+                    // Specify UTC kind for PostgreSQL compatibility
+                    fromDateParsed = DateTime.SpecifyKind(parsedFrom, DateTimeKind.Utc);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(toDate))
+            {
+                if (DateTime.TryParse(toDate, out var parsedTo))
+                {
+                    // Specify UTC kind for PostgreSQL compatibility
+                    toDateParsed = DateTime.SpecifyKind(parsedTo, DateTimeKind.Utc);
+                }
+            }
+
+            // Build query with filters
+            var query = db.OrderProcesses.AsNoTracking()
                 .Include(op => op.CreatedBy)
                 .Include(op => op.WorkOrder)
                 .Include(op => op.ConfirmProcess)
@@ -33,6 +66,74 @@ public static class OrderProcessEndpoints
                 .Include(op => op.ReceiveProcess)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
+                .AsQueryable();
+
+            // Apply search filter (OrderProcess Id)
+            if (search.HasValue)
+            {
+                query = query.Where(op => op.Id == search.Value);
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(op => op.Status == status);
+            }
+
+            // Apply date range filters
+            if (fromDateParsed.HasValue)
+            {
+                query = query.Where(op => op.CreatedDate >= fromDateParsed.Value);
+            }
+
+            if (toDateParsed.HasValue)
+            {
+                // Include the entire day by setting time to end of day
+                var endOfDay = toDateParsed.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(op => op.CreatedDate <= endOfDay);
+            }
+
+            // Apply workOrderNumber filter (via WorkOrder navigation property)
+            if (!string.IsNullOrWhiteSpace(workOrderNumber))
+            {
+                query = query.Where(op => op.WorkOrder.WorkOrderNumber.Contains(workOrderNumber));
+            }
+
+            // Apply createdByName filter (via CreatedBy navigation property)
+            if (!string.IsNullOrWhiteSpace(createdByName))
+            {
+                query = query.Where(op => op.CreatedBy.UserName.Contains(createdByName));
+            }
+
+            // Apply lineName filter (via WorkOrder navigation property)
+            if (!string.IsNullOrWhiteSpace(lineName))
+            {
+                query = query.Where(op => op.WorkOrder.LineName.Contains(lineName));
+            }
+
+            // Apply sourceStation filter (via ShipmentProcess navigation property)
+            if (!string.IsNullOrWhiteSpace(sourceStation))
+            {
+                query = query.Where(op => op.ShipmentProcess != null && op.ShipmentProcess.SourceStation == sourceStation);
+            }
+
+            // Apply destinationStation filter (via ShipmentProcess navigation property)
+            if (!string.IsNullOrWhiteSpace(destinationStation))
+            {
+                query = query.Where(op => op.ShipmentProcess != null && op.ShipmentProcess.DestinationStation == destinationStation);
+            }
+
+            // Apply executeVehicleName filter (via ShipmentProcess navigation property)
+            if (!string.IsNullOrWhiteSpace(executeVehicleName))
+            {
+                query = query.Where(op => op.ShipmentProcess != null && op.ShipmentProcess.ExecuteVehicleName != null && op.ShipmentProcess.ExecuteVehicleName.Contains(executeVehicleName));
+            }
+
+            // Get total count after filters
+            var totalCount = await query.CountAsync();
+
+            // Apply sorting and pagination
+            var orderProcesses = await query
                 .OrderByDescending(op => op.CreatedDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -52,6 +153,19 @@ public static class OrderProcessEndpoints
                     TotalPages = totalPages,
                     HasPrevious = page > 1,
                     HasNext = page < totalPages
+                },
+                Filters = new
+                {
+                    Search = search,
+                    Status = status,
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    WorkOrderNumber = workOrderNumber,
+                    CreatedByName = createdByName,
+                    LineName = lineName,
+                    SourceStation = sourceStation,
+                    DestinationStation = destinationStation,
+                    ExecuteVehicleName = executeVehicleName
                 }
             };
 
