@@ -13,8 +13,17 @@ public static class OrderProcessEndpoints
     public static RouteGroupBuilder MapOrderProcessEndpoints(this RouteGroupBuilder group)
     {
         // -------------------- GET /api/orderprocesses --------------------
-        group.MapGet("/", async (AppDbContext db) =>
+        group.MapGet("/", async (AppDbContext db, int page = 1, int pageSize = 10) =>
         {
+            // Validate pagination parameters
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100; // Max page size limit
+
+            // Get total count
+            var totalCount = await db.OrderProcesses.CountAsync();
+
+            // Get paginated data
             var orderProcesses = await db.OrderProcesses.AsNoTracking()
                 .Include(op => op.CreatedBy)
                 .Include(op => op.WorkOrder)
@@ -24,9 +33,29 @@ public static class OrderProcessEndpoints
                 .Include(op => op.ReceiveProcess)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
+                .OrderByDescending(op => op.CreatedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return Results.Ok(orderProcesses.Select(op => op.ToListDto()));
+            // Calculate pagination metadata
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var response = new
+            {
+                Data = orderProcesses.Select(op => op.ToListDto()),
+                Pagination = new
+                {
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    HasPrevious = page > 1,
+                    HasNext = page < totalPages
+                }
+            };
+
+            return Results.Ok(response);
         });
 
         // -------------------- GET /api/orderprocesses/{id} --------------------

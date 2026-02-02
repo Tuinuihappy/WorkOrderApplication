@@ -7,6 +7,7 @@ public class OrderProcess
     public string OrderNumber { get; set; } = default!;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? TimeToUse { get; set; }
+    
     public ICollection<OrderMaterial> OrderMaterials { get; set; } = new List<OrderMaterial>();
     public string Status { get; set; } = "Order Placed"; // Pending, Preparing, Shipped, Received, Delivered
     // -----------------------------------------------------------------------------------------------------------

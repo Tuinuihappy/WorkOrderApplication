@@ -7,6 +7,7 @@ public class OrderMaterial
     // -----------------------------------------------------------------------------------------------------------
     public int OrderProcessId { get; set; }   // Foreign Key
     public OrderProcess OrderProcess { get; set; } = default!;
+
     // -----------------------------------------------------------------------------------------------------------
     public int MaterialId { get; set; } // Foreign Key
     public Material Material { get; set; } = default!; // Navigation Property
