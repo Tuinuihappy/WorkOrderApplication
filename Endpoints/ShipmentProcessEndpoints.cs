@@ -4,6 +4,7 @@ using FluentValidation.Results;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
+using WorkOrderApplication.API.Enums;
 using WorkOrderApplication.API.Mappings;
 using WorkOrderApplication.API.Services;
 using Microsoft.AspNetCore.SignalR;
@@ -22,12 +23,12 @@ public static class ShipmentProcessEndpoints
             LocationRequestDto dto,
             AppDbContext db,
             OrderProxyService service,
-            IHubContext<ShipmentProcessHub> trackedHub,     // ✅ ยังใช้ Hub เดิมได้ ถ้าอยาก Broadcast
+            IHubContext<ShipmentProcessHub> trackedHub,
             ILoggerFactory loggerFactory) =>
         {
             var _logger = loggerFactory.CreateLogger("ShipmentProcess");
 
-            // ✅ หา mapping จากตาราง OrderGroupAMR (ใช้เหมือนเดิม)
+            // ✅ หา mapping จากตาราง OrderGroupAMR
             var mapping = await db.OrderGroupAMRs
                 .FirstOrDefaultAsync(x =>
                     x.SourceStation == dto.SourceStation &&
@@ -41,96 +42,171 @@ public static class ShipmentProcessEndpoints
                 });
             }
 
-            // ✅ เรียก External API
-            var orderGroupDto = new OrderGroupRequestDto(mapping.OrderGroupId);
-            var result = await service.AddOrderGroupAsync(orderGroupDto);
-
-            using var jsonDoc = JsonDocument.Parse(result);
-            var root = jsonDoc.RootElement.GetProperty("result");
-
-            // ✅ ดึงข้อมูลจาก response
-            var externalId = root.GetProperty("id").GetInt32();
-            var orderId = root.GetProperty("orderId").GetString();
-            var orderName = root.GetProperty("orderName").GetString();
-
-            string? executeVehicleName = null;
-            string? executeVehicleKey = null;
-
-            if (root.TryGetProperty("executeVehicleName", out var nameProp))
-                executeVehicleName = nameProp.GetString();
-
-            if (root.TryGetProperty("executeVehicleKey", out var keyProp))
-                executeVehicleKey = keyProp.GetString();
-
-            // ✅ ตรวจสอบว่ามี ShipmentProcess อยู่แล้วหรือไม่ (ตาม ExternalId)
-            var existing = await db.ShipmentProcesses
-                .FirstOrDefaultAsync(x => x.ExternalId == externalId);
-
-            if (existing is null)
+            // 🔀 แยก Logic ตาม ShipmentMode
+            if (dto.Mode == ShipmentMode.Manual)
             {
-                // ➕ เพิ่ม ShipmentProcess ใหม่
+                // 🔹 Manual Mode: ไม่เรียก External API
+                _logger.LogInformation("[Manual Mode] Creating shipment without calling External API");
+
+                // 👤 ถ้ามี UserId ให้ดึงชื่อคนส่งมาใส่ใน ExecuteVehicleName
+                string? executeVehicleName = null;
+                if (dto.UserId.HasValue)
+                {
+                    var user = await db.Users.FindAsync(dto.UserId.Value);
+                    if (user != null)
+                    {
+                        executeVehicleName = user.UserName;
+                        _logger.LogInformation("[Manual Mode] Assigned ExecuteVehicleName = {UserName} from UserId={UserId}", user.UserName, dto.UserId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("[Manual Mode] User with Id={UserId} not found", dto.UserId);
+                    }
+                }
+
                 var shipment = new ShipmentProcess
                 {
+                    ShipmentMode = ShipmentMode.Manual,
                     SourceStationId = mapping.SourceStationId,
                     SourceStation = dto.SourceStation,
                     DestinationStationId = mapping.DestinationStationId,
                     DestinationStation = dto.DestinationStation,
                     OrderGroupId = mapping.OrderGroupId,
-                    ExternalId = externalId,
-                    OrderId = orderId ?? "",
-                    OrderName = orderName ?? "",
-                    ExecuteVehicleName = executeVehicleName ?? "",
-                    ExecuteVehicleKey = executeVehicleKey ?? "",
+                    OrderProcessId = dto.OrderProcessId,
                     LastSynced = DateTime.UtcNow,
-                    OrderProcessId = dto.OrderProcessId   // ✅ มาจาก client เพื่อผูกกับ OrderProcess
+                    ExecuteVehicleName = executeVehicleName, // ✅ Assign ชื่อคนส่ง
+                    // ไม่มี ExternalId, OrderId, OrderName สำหรับ Manual mode
                 };
 
                 db.ShipmentProcesses.Add(shipment);
                 await db.SaveChangesAsync();
 
-                // 📡 แจ้ง SignalR event ถ้าต้องการให้ UI รับรู้
+                // 📡 Broadcast SignalR event
                 await trackedHub.Clients.All.SendAsync("ShipmentProcessAdded", new
                 {
                     shipment.Id,
-                    shipment.ExternalId,
-                    shipment.OrderId,
-                    shipment.OrderName,
+                    shipment.ShipmentMode,
                     shipment.SourceStation,
                     shipment.SourceStationId,
                     shipment.DestinationStation,
                     shipment.DestinationStationId,
                     shipment.OrderGroupId,
-                    shipment.ExecuteVehicleName,
-                    shipment.ExecuteVehicleKey,
-                    shipment.LastSynced
+                    shipment.OrderProcessId,
+                    shipment.LastSynced,
+                    shipment.ExecuteVehicleName, // ✅ ส่งชื่อคนส่งกลับไปด้วย
+                    Mode = "Manual"
                 });
 
-                _logger.LogInformation("[SignalR ▶️] Broadcasted ShipmentProcessAdded for {OrderName} ({ExternalId})",
-                    shipment.OrderName, shipment.ExternalId);
+                _logger.LogInformation("[SignalR ▶️] Broadcasted ShipmentProcessAdded (Manual) for Id={Id}", shipment.Id);
+
+                return Results.Ok(new
+                {
+                    id = shipment.Id,
+                    mode = "Manual",
+                    sourceStation = shipment.SourceStation,
+                    destinationStation = shipment.DestinationStation,
+                    orderProcessId = shipment.OrderProcessId,
+                    message = "Manual shipment created successfully"
+                });
             }
             else
             {
-                // 🔄 ถ้ามีอยู่แล้ว → อัปเดตข้อมูล
-                existing.ExecuteVehicleName = executeVehicleName ?? existing.ExecuteVehicleName;
-                existing.ExecuteVehicleKey = executeVehicleKey ?? existing.ExecuteVehicleKey;
-                existing.LastSynced = DateTime.UtcNow;
+                // 🔹 External API Mode: เรียก AMR API
+                _logger.LogInformation("[External API Mode] Calling External API for AMR");
 
-                await db.SaveChangesAsync();
+                var orderGroupDto = new OrderGroupRequestDto(mapping.OrderGroupId);
+                var result = await service.AddOrderGroupAsync(orderGroupDto);
 
-                await trackedHub.Clients.All.SendAsync("ShipmentProcessUpdated", new
+                using var jsonDoc = JsonDocument.Parse(result);
+                var root = jsonDoc.RootElement.GetProperty("result");
+
+                // ✅ ดึงข้อมูลจาก response
+                var externalId = root.GetProperty("id").GetInt32();
+                var orderId = root.GetProperty("orderId").GetString();
+                var orderName = root.GetProperty("orderName").GetString();
+
+                string? executeVehicleName = null;
+                string? executeVehicleKey = null;
+
+                if (root.TryGetProperty("executeVehicleName", out var nameProp))
+                    executeVehicleName = nameProp.GetString();
+
+                if (root.TryGetProperty("executeVehicleKey", out var keyProp))
+                    executeVehicleKey = keyProp.GetString();
+
+                // ✅ ตรวจสอบว่ามี ShipmentProcess อยู่แล้วหรือไม่ (ตาม ExternalId)
+                var existing = await db.ShipmentProcesses
+                    .FirstOrDefaultAsync(x => x.ExternalId == externalId);
+
+                if (existing is null)
                 {
-                    existing.ExternalId,
-                    existing.ExecuteVehicleName,
-                    existing.ExecuteVehicleKey,
-                    existing.LastSynced
-                });
+                    // ➕ เพิ่ม ShipmentProcess ใหม่
+                    var shipment = new ShipmentProcess
+                    {
+                        ShipmentMode = ShipmentMode.ExternalApi,
+                        SourceStationId = mapping.SourceStationId,
+                        SourceStation = dto.SourceStation,
+                        DestinationStationId = mapping.DestinationStationId,
+                        DestinationStation = dto.DestinationStation,
+                        OrderGroupId = mapping.OrderGroupId,
+                        ExternalId = externalId,
+                        OrderId = orderId ?? "",
+                        OrderName = orderName ?? "",
+                        ExecuteVehicleName = executeVehicleName ?? "",
+                        ExecuteVehicleKey = executeVehicleKey ?? "",
+                        LastSynced = DateTime.UtcNow,
+                        OrderProcessId = dto.OrderProcessId
+                    };
 
-                _logger.LogInformation("[SignalR 🔄] Broadcasted ShipmentProcessUpdated for {OrderName} ({ExternalId})",
-                    existing.OrderName, existing.ExternalId);
+                    db.ShipmentProcesses.Add(shipment);
+                    await db.SaveChangesAsync();
+
+                    // 📡 แจ้ง SignalR event
+                    await trackedHub.Clients.All.SendAsync("ShipmentProcessAdded", new
+                    {
+                        shipment.Id,
+                        shipment.ShipmentMode,
+                        shipment.ExternalId,
+                        shipment.OrderId,
+                        shipment.OrderName,
+                        shipment.SourceStation,
+                        shipment.SourceStationId,
+                        shipment.DestinationStation,
+                        shipment.DestinationStationId,
+                        shipment.OrderGroupId,
+                        shipment.ExecuteVehicleName,
+                        shipment.ExecuteVehicleKey,
+                        shipment.LastSynced,
+                        Mode = "ExternalApi"
+                    });
+
+                    _logger.LogInformation("[SignalR ▶️] Broadcasted ShipmentProcessAdded (External API) for {OrderName} ({ExternalId})",
+                        shipment.OrderName, shipment.ExternalId);
+                }
+                else
+                {
+                    // 🔄 ถ้ามีอยู่แล้ว → อัปเดตข้อมูล
+                    existing.ExecuteVehicleName = executeVehicleName ?? existing.ExecuteVehicleName;
+                    existing.ExecuteVehicleKey = executeVehicleKey ?? existing.ExecuteVehicleKey;
+                    existing.LastSynced = DateTime.UtcNow;
+
+                    await db.SaveChangesAsync();
+
+                    await trackedHub.Clients.All.SendAsync("ShipmentProcessUpdated", new
+                    {
+                        existing.ExternalId,
+                        existing.ExecuteVehicleName,
+                        existing.ExecuteVehicleKey,
+                        existing.LastSynced
+                    });
+
+                    _logger.LogInformation("[SignalR 🔄] Broadcasted ShipmentProcessUpdated for {OrderName} ({ExternalId})",
+                        existing.OrderName, existing.ExternalId);
+                }
+
+                // ✅ ส่งต่อ response ดิบกลับไปให้ client
+                return Results.Json(JsonSerializer.Deserialize<object>(result));
             }
-
-            // ✅ ส่งต่อ response ดิบกลับไปให้ client
-            return Results.Json(JsonSerializer.Deserialize<object>(result));
         });
         
         // // -------------------- PATCH /api/shipmentprocesses/{id}/arrived --------------------

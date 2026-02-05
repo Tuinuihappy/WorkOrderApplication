@@ -341,6 +341,7 @@ using System.Text.Json;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
+using WorkOrderApplication.API.Enums;
 using WorkOrderApplication.API.Hubs;
 using WorkOrderApplication.API.Mappings;
 
@@ -390,8 +391,10 @@ public class OrderRecordByIdBackgroundService : BackgroundService
 
         try
         {
-            // STEP 1: โหลดรายการ ShipmentProcesses
-            var tracked = await db.ShipmentProcesses.ToListAsync(token);
+            // STEP 1: โหลดรายการ ShipmentProcesses (เฉพาะ External API mode)
+            var tracked = await db.ShipmentProcesses
+                .Where(s => s.ShipmentMode == ShipmentMode.ExternalApi)  // ✅ Sync เฉพาะ External API
+                .ToListAsync(token);
             if (!tracked.Any())
             {
                 _logger.LogDebug("[DETAIL ⚠️] No tracked orders found.");

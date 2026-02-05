@@ -126,6 +126,7 @@ public static class ReceivedProcessEndpoints
             {
                 Message = "ReceivedProcess created successfully and vehicle pass executed",
                 VehicleKey = vehicleKey,
+                ShortageReason = entity.ShortageReason, // ✅ เพิ่มเหตุผลกลับไปให้ client
                 OrderProcess = orderDto
             });
         })

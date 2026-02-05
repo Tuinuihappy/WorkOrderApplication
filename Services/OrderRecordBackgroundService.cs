@@ -5,6 +5,7 @@ using System.Text.Json;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
+using WorkOrderApplication.API.Enums;
 using WorkOrderApplication.API.Hubs;
 using WorkOrderApplication.API.Mappings;
 
@@ -88,8 +89,10 @@ public class OrderRecordBackgroundService : BackgroundService
 
             sw.Restart();
 
-            // 🧠 STEP 2: โหลด ShipmentProcess ทั้งหมด
-            var shipments = await db.ShipmentProcesses.ToListAsync(token);
+            // 🧠 STEP 2: โหลด ShipmentProcess ทั้งหมด (เฉพาะ External API mode)
+            var shipments = await db.ShipmentProcesses
+                .Where(s => s.ShipmentMode == ShipmentMode.ExternalApi)  // ✅ Sync เฉพาะ External API
+                .ToListAsync(token);
             var trackedIds = shipments.Select(s => s.ExternalId).ToHashSet();
 
             // 🔍 Filter เฉพาะ order ที่อยู่ใน shipment

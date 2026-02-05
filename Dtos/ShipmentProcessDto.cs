@@ -26,11 +26,6 @@ namespace WorkOrderApplication.API.Dtos
         DateTime? ArrivalTime
     );
 }
-public record LocationRequestDto(
-    string SourceStation,
-    string DestinationStation,
-    int OrderProcessId  // เพิ่มมาเพื่อผูก ShipmentProcess กับ OrderProcess
-);
 
 public record ShipmentArrivalDto(
     DateTime ArrivalTime

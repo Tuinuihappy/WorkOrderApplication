@@ -50,6 +50,7 @@ public static class ReceivedProcessMapping
     {
         entity.ReceivedByUserId = dto.ReceivedByUserId;
         entity.OrderProcessId = dto.OrderProcessId;
+        entity.ShortageReason = dto.ShortageReason; // ✅ เพิ่มการอัปเดตเหตุผล
         entity.ReceivedDate = DateTime.UtcNow;
         entity.ReceivedMaterials = dto.ReceivedMaterials.Select(rm => rm.ToEntity()).ToList();
     }

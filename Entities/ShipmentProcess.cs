@@ -1,10 +1,14 @@
     using System;
+    using WorkOrderApplication.API.Enums;
 
     namespace WorkOrderApplication.API.Entities;
 
     public class ShipmentProcess
     {
         public int Id { get; set; }
+        
+        // 🔹 โหมดการส่ง
+        public ShipmentMode ShipmentMode { get; set; } = ShipmentMode.ExternalApi;
         
         // 🔹 สถานีต้นทาง–ปลายทาง
         public int SourceStationId { get; set; }
