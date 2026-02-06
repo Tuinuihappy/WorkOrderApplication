@@ -15,6 +15,9 @@ public class OrderProcessConfiguration : IEntityTypeConfiguration<OrderProcess>
         builder.HasIndex(op => op.OrderNumber)
                .IsUnique();
 
+        builder.HasIndex(op => op.Status); // ✅ Index for Status
+        builder.HasIndex(op => op.CreatedDate); // ✅ Index for CreatedDate
+
         builder.Property(op => op.OrderNumber)
                .IsRequired()
                .HasMaxLength(50);

@@ -25,6 +25,7 @@ namespace WorkOrderApplication.API.Mappings
             LastSynced: entity.LastSynced,
             OrderProcessId: entity.OrderProcessId,
             OrderProcessName: entity.OrderProcess?.ToString(),
+            ShipmentMode: entity.ShipmentMode.ToString(), // ✅ Map Enum to String
             ArrivalTime: entity.ArrivalTime.ToICT()
             );
 

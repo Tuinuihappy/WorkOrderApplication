@@ -11,8 +11,12 @@ namespace WorkOrderApplication.API.Configurations
                      // ---------------- Table ----------------
                      builder.ToTable("ShipmentProcesses");
 
-                    // ---------------- Primary Key ----------------
+                     // ---------------- Primary Key ----------------
                     builder.HasKey(s => s.Id);
+
+                    // ---------------- Indexes ----------------
+                    builder.HasIndex(s => s.SourceStation); // ✅ Index for SourceStation
+                    builder.HasIndex(s => s.DestinationStation); // ✅ Index for DestinationStation
                      
 
                     builder.Property(rp => rp.ArrivalTime)

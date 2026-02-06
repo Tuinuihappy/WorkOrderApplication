@@ -23,6 +23,7 @@ namespace WorkOrderApplication.API.Dtos
         DateTime? LastSynced,
         int OrderProcessId,
         string? OrderProcessName,
+        string? ShipmentMode, // ✅ เพิ่ม ShipmentMode
         DateTime? ArrivalTime
     );
 }

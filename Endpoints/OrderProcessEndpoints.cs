@@ -66,6 +66,7 @@ public static class OrderProcessEndpoints
                 .Include(op => op.ReceiveProcess)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
+                .AsSplitQuery()
                 .AsQueryable();
 
             // Apply search filter (OrderProcess Id)
@@ -199,6 +200,7 @@ public static class OrderProcessEndpoints
                         .ThenInclude(rm => rm.Material)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(op => op.Id == id);
 
             return orderProcess is not null
