@@ -28,25 +28,11 @@ public static class ShipmentProcessEndpoints
         {
             var _logger = loggerFactory.CreateLogger("ShipmentProcess");
 
-            // ✅ หา mapping จากตาราง OrderGroupAMR
-            var mapping = await db.OrderGroupAMRs
-                .FirstOrDefaultAsync(x =>
-                    x.SourceStation == dto.SourceStation &&
-                    x.DestinationStation == dto.DestinationStation);
-
-            if (mapping is null)
-            {
-                return Results.BadRequest(new
-                {
-                    error = $"No mapping found for route {dto.SourceStation} → {dto.DestinationStation}"
-                });
-            }
-
             // 🔀 แยก Logic ตาม ShipmentMode
             if (dto.Mode == ShipmentMode.Manual)
             {
-                // 🔹 Manual Mode: ไม่เรียก External API
-                _logger.LogInformation("[Manual Mode] Creating shipment without calling External API");
+                // 🔹 Manual Mode: ไม่ต้องเช็ค OrderGroupAMR และไม่เรียก External API
+                _logger.LogInformation("[Manual Mode] Creating shipment without checking OrderGroupAMR or calling External API");
 
                 // 👤 ถ้ามี UserId ให้ดึงชื่อคนส่งมาใส่ใน ExecuteVehicleName
                 string? executeVehicleName = null;
@@ -67,15 +53,18 @@ public static class ShipmentProcessEndpoints
                 var shipment = new ShipmentProcess
                 {
                     ShipmentMode = ShipmentMode.Manual,
-                    SourceStationId = mapping.SourceStationId,
+                    // กรณี Manual ให้เป็น 0 ไปเลย เพราะไม่จำเป็นต้อง map กับ OrderGroupAMR
+                    SourceStationId = 0, 
+                    DestinationStationId = 0,
+                    OrderGroupId = 0,
+                    
+                    // รับค่าจาก UI โดยตรง
                     SourceStation = dto.SourceStation,
-                    DestinationStationId = mapping.DestinationStationId,
                     DestinationStation = dto.DestinationStation,
-                    OrderGroupId = mapping.OrderGroupId,
+                    
                     OrderProcessId = dto.OrderProcessId,
                     LastSynced = DateTime.UtcNow,
-                    ExecuteVehicleName = executeVehicleName, // ✅ Assign ชื่อคนส่ง
-                    // ไม่มี ExternalId, OrderId, OrderName สำหรับ Manual mode
+                    ExecuteVehicleName = executeVehicleName, 
                 };
 
                 db.ShipmentProcesses.Add(shipment);
@@ -93,7 +82,7 @@ public static class ShipmentProcessEndpoints
                     shipment.OrderGroupId,
                     shipment.OrderProcessId,
                     shipment.LastSynced,
-                    shipment.ExecuteVehicleName, // ✅ ส่งชื่อคนส่งกลับไปด้วย
+                    shipment.ExecuteVehicleName,
                     Mode = "Manual"
                 });
 
@@ -111,7 +100,22 @@ public static class ShipmentProcessEndpoints
             }
             else
             {
-                // 🔹 External API Mode: เรียก AMR API
+                // 🔹 External API Mode: ต้องเช็ค OrderGroupAMR และเรียก AMR API
+                
+                // ✅ หา mapping จากตาราง OrderGroupAMR (ย้ายมาทำใน else block)
+                var mapping = await db.OrderGroupAMRs
+                    .FirstOrDefaultAsync(x =>
+                        x.SourceStation == dto.SourceStation &&
+                        x.DestinationStation == dto.DestinationStation);
+
+                if (mapping is null)
+                {
+                    return Results.BadRequest(new
+                    {
+                        error = $"No mapping found for route {dto.SourceStation} → {dto.DestinationStation}"
+                    });
+                }
+
                 _logger.LogInformation("[External API Mode] Calling External API for AMR");
 
                 var orderGroupDto = new OrderGroupRequestDto(mapping.OrderGroupId);

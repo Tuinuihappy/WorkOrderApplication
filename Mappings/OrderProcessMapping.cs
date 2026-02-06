@@ -17,8 +17,8 @@ public static class OrderProcessMapping
             entity.CreatedByUserId,
             entity.CreatedBy?.UserName ?? string.Empty,
             entity.WorkOrderId,
-            entity.WorkOrder.ToDetailsDto(),
-            entity.OrderMaterials.Select(om => om.ToDetailsDto()).ToList(),
+            entity.WorkOrder?.ToDetailsDto(), // ✅ Add null check
+            entity.OrderMaterials?.Select(om => om.ToDetailsDto()).ToList() ?? new List<OrderMaterialDetailsDto>(), // ✅ Add null check
             entity.ConfirmProcess?.ToDetailsDto(),
             entity.PreparingProcess?.ToDetailsDto(),
             entity.ShipmentProcess?.ToDto(),
