@@ -7,6 +7,7 @@ public record PreparingProcessDetailsDto(
     int PreparingByUserId,
     string PreparingByName,
     int OrderProcessId,
+    string? ShortageReason,
     List<PreparingMaterialDetailsDto> PreparingMaterials
 );
 
@@ -14,6 +15,7 @@ public record PreparingProcessDetailsDto(
 public record PreparingProcessUpsertDto(
     int PreparingByUserId,
     int OrderProcessId,
+    string? ShortageReason,
     List<PreparingMaterialUpsertDto> PreparingMaterials
 );
 

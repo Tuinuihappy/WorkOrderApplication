@@ -17,7 +17,7 @@ public static class OrderProcessEndpoints
             AppDbContext db,
             int page = 1,
             int pageSize = 10,
-            int? search = null,
+            string? search = null, // ✅ Change to string for global search
             string? status = null,
             string? fromDate = null,
             string? toDate = null,
@@ -69,10 +69,23 @@ public static class OrderProcessEndpoints
                 .AsSplitQuery()
                 .AsQueryable();
 
-            // Apply search filter (OrderProcess Id)
-            if (search.HasValue)
+            // ✅ Apply Global Search (Multi-field filter)
+            if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(op => op.Id == search.Value);
+                var lowerSearch = search.ToLower();
+                int? searchId = int.TryParse(search, out var idVal) ? idVal : null;
+
+                query = query.Where(op =>
+                    (searchId.HasValue && op.Id == searchId.Value) || // ✅ Add ID check
+                    op.OrderNumber.ToLower().Contains(lowerSearch) ||
+                    op.Status.ToLower().Contains(lowerSearch) ||
+                    op.WorkOrder.WorkOrderNumber.ToLower().Contains(lowerSearch) ||
+                    op.CreatedBy.UserName.ToLower().Contains(lowerSearch) ||
+                    (op.WorkOrder.LineName != null && op.WorkOrder.LineName.ToLower().Contains(lowerSearch)) ||
+                    (op.ShipmentProcess != null && op.ShipmentProcess.SourceStation != null && op.ShipmentProcess.SourceStation.ToLower().Contains(lowerSearch)) ||
+                    (op.ShipmentProcess != null && op.ShipmentProcess.DestinationStation != null && op.ShipmentProcess.DestinationStation.ToLower().Contains(lowerSearch)) ||
+                    (op.ShipmentProcess != null && op.ShipmentProcess.ExecuteVehicleName != null && op.ShipmentProcess.ExecuteVehicleName.ToLower().Contains(lowerSearch))
+                );
             }
 
             // Apply status filter

@@ -181,7 +181,7 @@ public static class ShipmentProcessEndpoints
                         shipment.ExecuteVehicleName,
                         shipment.ExecuteVehicleKey,
                         shipment.LastSynced,
-                        Mode = "ExternalApi"
+                        Mode = "AMR"
                     });
 
                     _logger.LogInformation("[SignalR ▶️] Broadcasted ShipmentProcessAdded (External API) for {OrderName} ({ExternalId})",

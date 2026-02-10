@@ -14,6 +14,7 @@ public static class PreparingProcessMapping
             entity.PreparingByUserId,
             entity.PreparingBy?.UserName ?? string.Empty,
             entity.OrderProcessId,
+            entity.ShortageReason, 
 
             entity.PreparingMaterials.Select(pm => pm.ToDetailsDto()).ToList()
         );
@@ -24,7 +25,6 @@ public static class PreparingProcessMapping
             entity.PreparedDate.ToICT(),
             entity.OrderProcessId,
             entity.PreparingBy?.UserName ?? string.Empty,
-
             entity.PreparingMaterials.Count
         );
 
@@ -34,6 +34,7 @@ public static class PreparingProcessMapping
         {
             PreparingByUserId = dto.PreparingByUserId,
             OrderProcessId = dto.OrderProcessId,
+            ShortageReason = dto.ShortageReason,
 
             PreparedDate = DateTime.UtcNow,
             PreparingMaterials = dto.PreparingMaterials.Select(pm => pm.ToEntity()).ToList()
@@ -43,6 +44,7 @@ public static class PreparingProcessMapping
     {
         entity.PreparingByUserId = dto.PreparingByUserId;
         entity.OrderProcessId = dto.OrderProcessId;
+        entity.ShortageReason = dto.ShortageReason;
         entity.PreparedDate = DateTime.UtcNow;
         entity.PreparingMaterials = dto.PreparingMaterials.Select(pm => pm.ToEntity()).ToList();
     }

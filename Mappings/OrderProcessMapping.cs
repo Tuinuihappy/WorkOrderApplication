@@ -24,7 +24,8 @@ public static class OrderProcessMapping
             entity.ShipmentProcess?.ToDto(),
             entity.ReceiveProcess?.ToDetailsDto(),
             entity.CancelledProcess?.ToDetailsDto(),
-            entity.ReturnProcess?.ToDetailsDto()
+            entity.ReturnProcess?.ToDetailsDto(),
+            entity.PreparingProcess?.ShortageReason // ✅ Map ShortageReason
         );
 
     // -------------------- Entity → ListDto --------------------

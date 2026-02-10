@@ -17,7 +17,8 @@ public record OrderProcessDetailsDto(
     ShipmentProcessDto? ShipmentProcess,
     ReceivedProcessDetailsDto? Receive,
     CancelledProcessDetailsDto? CancelledProcess,
-    ReturnProcessDetailsDto? ReturnProcess
+    ReturnProcessDetailsDto? ReturnProcess,
+    string? ShortageReason // ✅ เพิ่ม ShortageReason
 );
 
 // -------------------- ใช้สำหรับ Insert / Update --------------------

@@ -36,5 +36,4 @@
         // -----------------------------------------------------------------------------------------------------------
         public int OrderProcessId { get; set; }
         public OrderProcess OrderProcess { get; set; } = default!;
-
     }
