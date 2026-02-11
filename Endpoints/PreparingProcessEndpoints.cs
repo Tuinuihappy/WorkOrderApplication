@@ -74,7 +74,7 @@ public static class PreparingProcessEndpoints
                     return Results.NotFound($"OrderProcess {dto.OrderProcessId} not found.");
 
                 // ✅ อัปเดตสถานะ OrderProcess
-                orderProcess.Status = "Shipment"; // หรือ "Ready to Ship" ตาม workflow จริงของคุณ
+                orderProcess.Status = "In Transit"; // หรือ "Ready to Ship" ตาม workflow จริงของคุณ
 
                 // ✅ Save changes
                 await db.SaveChangesAsync();

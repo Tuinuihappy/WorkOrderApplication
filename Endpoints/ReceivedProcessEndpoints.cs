@@ -86,7 +86,7 @@ public static class ReceivedProcessEndpoints
             db.ReceivedProcesses.Add(entity);
 
             // ✅ อัปเดตสถานะ OrderProcess
-            orderProcess.Status = "Received";
+            orderProcess.Status = "Delivered";
             await db.SaveChangesAsync();
 
             // ✅ ถ้ามี vehicleKey → เรียก Vehicle Pass API
