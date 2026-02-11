@@ -15,23 +15,34 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         builder.HasKey(w => w.Id);
 
         // -------------------- Properties --------------------
-        builder.Property(w => w.WorkOrderNumber)
+        builder.Property(w => w.Order)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.HasIndex(w => w.WorkOrderNumber)
+        builder.HasIndex(w => w.Order)
             .IsUnique(); // ห้ามซ้ำ
 
-        builder.Property(w => w.LineName)
+        builder.Property(w => w.OrderType)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(50);
 
-        builder.Property(w => w.ModelName)
+        builder.Property(w => w.Plant)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(50);
+
+        builder.Property(w => w.Material)
+            .IsRequired()
+            .HasMaxLength(200);
 
         builder.Property(w => w.Quantity)
             .IsRequired();
+
+        builder.Property(w => w.Unit)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasDefaultValue("PCE");
+
+        builder.Property(w => w.BasicFinishDate);
 
         builder.Property(w => w.CreatedDate)
             .IsRequired()
@@ -50,14 +61,6 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
             .HasForeignKey(o => o.WorkOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(w => w.CreatedBy)
-            .WithMany()
-            .HasForeignKey(w => w.CreatedByUserId)
-            .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(w => w.UpdatedBy)
-            .WithMany()
-            .HasForeignKey(w => w.UpdatedByUserId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

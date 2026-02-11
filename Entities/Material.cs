@@ -8,9 +8,12 @@ public class Material
 
     public string MaterialNumber { get; set; } = default!; // รหัสวัสดุ
     public string Description { get; set; } = default!; // รายละเอียดวัสดุ
-    public int Quantity { get; set; } // จำนวนที่สั่งผลิตใน Work Order
-    public int RequestPerHour { get; set; } // จำนวนที่ขอใช้ต่อชั่วโมง
-    public string Unit { get; set; } = default!; // หน่วยนับ
+    public decimal Quantity { get; set; } // Reqmnt qty
+    public decimal WithdrawnQuantity { get; set; } // Qty wthdrn
+    public string Unit { get; set; } = default!; // BUn
+    public string? OperationActivity { get; set; } // OpAc
+    public string? SortString { get; set; } // SortStrng
+    public string? StorageLocation { get; set; } // SLoc
     // -----------------------------------------------------------------------------------------------------------
     public int WorkOrderId { get; set; } // Foreign Key
     public WorkOrder WorkOrder { get; set; } = default!; // Navigation Property

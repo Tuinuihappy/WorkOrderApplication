@@ -13,10 +13,13 @@ public class WorkOrder
     public int Id { get; set; }  // Primary Key ของตาราง WorkOrders
 
     // -------------------- ข้อมูลพื้นฐาน --------------------
-    public string WorkOrderNumber { get; set; } = default!; // รหัส WorkOrder (Unique)
-    public string LineName { get; set; } = default!;        // ชื่อไลน์การผลิต
-    public string ModelName { get; set; } = default!;       // ชื่อโมเดลสินค้า
+    public string Order { get; set; } = default!; // รหัส WorkOrder (Unique)
+    public string OrderType { get; set; } = default!;       // Order Type
+    public string Plant { get; set; } = default!;           // Plant
+    public string Material { get; set; } = default!;        // Material information
     public int Quantity { get; set; }                       // จำนวนที่จะผลิต
+    public string Unit { get; set; } = "PCE";               // หน่วยนับ (Default: PCE)
+    public DateTime? BasicFinishDate { get; set; }          // Basic Finish Date
 
     // -------------------- ความสัมพันธ์กับ Material --------------------
     public ICollection<Material> Materials { get; set; } = new List<Material>();  // รายการวัสดุที่เกี่ยวข้องกับ WorkOrder
@@ -26,12 +29,7 @@ public class WorkOrder
     public DateTime? UpdatedDate { get; set; }              // วันที่แก้ไขล่าสุด (nullable)
 
     // -------------------- ความสัมพันธ์กับ User (ผู้สร้าง) --------------------
-    public int CreatedByUserId { get; set; }                // FK → User.Id (ผู้สร้าง)
-    public User CreatedBy { get; set; } = default!;         // Navigation Property ไปยัง User ผู้สร้าง
 
-    // -------------------- ความสัมพันธ์กับ User (ผู้แก้ไข) --------------------
-    public int? UpdatedByUserId { get; set; }               // FK → User.Id (ผู้แก้ไขล่าสุด) (nullable)
-    public User? UpdatedBy { get; set; }                    // Navigation Property ไปยัง User ผู้แก้ไขล่าสุด
 
     // -------------------- ความสัมพันธ์กับ OrderProcess --------------------
     public ICollection<OrderProcess> OrderProcesses { get; set; } = new List<OrderProcess>(); // แต่ละ WorkOrder อาจมีหลายขั้นตอนการดำเนินการ (OrderProcess)

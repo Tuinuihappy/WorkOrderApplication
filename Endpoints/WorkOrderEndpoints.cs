@@ -16,7 +16,6 @@ public static class WorkOrderEndpoints
         group.MapGet("/", async (AppDbContext db) =>
         {
             var workOrders = await db.WorkOrders
-                .Include(w => w.CreatedBy)
                 .OrderByDescending(w => w.CreatedDate)
                 .Select(w => w.ToListDto())
                 .ToListAsync();
@@ -32,8 +31,6 @@ public static class WorkOrderEndpoints
         group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
         {
             var workOrder = await db.WorkOrders
-                .Include(w => w.CreatedBy)
-                .Include(w => w.UpdatedBy)
                 .Include(w => w.Materials)
                 .Include(w => w.OrderProcesses)
                 .FirstOrDefaultAsync(w => w.Id == id);
@@ -97,8 +94,6 @@ public static class WorkOrderEndpoints
 
         // 4. โหลดใหม่พร้อม Navigation Properties
         var updated = await db.WorkOrders
-            .Include(w => w.CreatedBy)     // ✅ สำคัญ
-            .Include(w => w.UpdatedBy)     // ✅ สำคัญ
             .Include(w => w.Materials)
             .Include(w => w.OrderProcesses)
             .FirstOrDefaultAsync(w => w.Id == id);
@@ -122,8 +117,6 @@ public static class WorkOrderEndpoints
         {
             var workOrder = await db.WorkOrders
                 .Include(w => w.Materials)
-                .Include(w => w.CreatedBy)
-                .Include(w => w.UpdatedBy)
                 .FirstOrDefaultAsync(w => w.Id == id);
 
             if (workOrder is null)

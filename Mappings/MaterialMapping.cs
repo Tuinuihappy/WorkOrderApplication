@@ -12,7 +12,11 @@ public static class MaterialMapping
             entity.MaterialNumber,
             entity.Description,
             entity.Quantity,
-            entity.Unit
+            entity.WithdrawnQuantity,
+            entity.Unit,
+            entity.OperationActivity,
+            entity.SortString,
+            entity.StorageLocation
         );
 
     // -------------------- Entity → DetailsDto --------------------
@@ -22,10 +26,13 @@ public static class MaterialMapping
             entity.MaterialNumber,
             entity.Description,
             entity.Quantity,
-            entity.RequestPerHour,
+            entity.WithdrawnQuantity,
             entity.Unit,
+            entity.OperationActivity,
+            entity.SortString,
+            entity.StorageLocation,
             entity.WorkOrderId,
-            entity.WorkOrder?.WorkOrderNumber ?? string.Empty
+            entity.WorkOrder?.Order ?? string.Empty
         );
 
     // -------------------- CreateDto → Entity --------------------
@@ -35,8 +42,11 @@ public static class MaterialMapping
             MaterialNumber = dto.MaterialNumber,
             Description = dto.Description,
             Quantity = dto.Quantity,
-            RequestPerHour = dto.RequestPerHour,
-            Unit = dto.Unit
+            WithdrawnQuantity = dto.WithdrawnQuantity,
+            Unit = dto.Unit,
+            OperationActivity = dto.OperationActivity,
+            SortString = dto.SortString,
+            StorageLocation = dto.StorageLocation
         };
 
     // -------------------- UpdateDto → Entity (ใช้ตอน reset Materials ใหม่) --------------------
@@ -47,8 +57,11 @@ public static class MaterialMapping
             MaterialNumber = dto.MaterialNumber,
             Description = dto.Description,
             Quantity = dto.Quantity,
-            RequestPerHour = dto.RequestPerHour,
-            Unit = dto.Unit
+            WithdrawnQuantity = dto.WithdrawnQuantity,
+            Unit = dto.Unit,
+            OperationActivity = dto.OperationActivity,
+            SortString = dto.SortString,
+            StorageLocation = dto.StorageLocation
         };
 
     public static Material ToEntity(this MaterialCreateDto dto, int workOrderId)
@@ -57,10 +70,14 @@ public static class MaterialMapping
             MaterialNumber = dto.MaterialNumber,
             Description = dto.Description,
             Quantity = dto.Quantity,
-            RequestPerHour = dto.RequestPerHour,
+            WithdrawnQuantity = dto.WithdrawnQuantity,
             Unit = dto.Unit,
+            OperationActivity = dto.OperationActivity,
+            SortString = dto.SortString,
+            StorageLocation = dto.StorageLocation,
+            RequestPerHour = dto.RequestPerHour,
             WorkOrderId = workOrderId
-    };
+        };
 
     // -------------------- UpdateDto → UpdateEntity (แก้ไขของเดิม) --------------------
     public static void UpdateEntity(this Material entity, MaterialUpdateDto dto)
@@ -68,7 +85,10 @@ public static class MaterialMapping
         entity.MaterialNumber = dto.MaterialNumber;
         entity.Description = dto.Description;
         entity.Quantity = dto.Quantity;
-        entity.RequestPerHour = dto.RequestPerHour;
+        entity.WithdrawnQuantity = dto.WithdrawnQuantity;
         entity.Unit = dto.Unit;
+        entity.OperationActivity = dto.OperationActivity;
+        entity.SortString = dto.SortString;
+        entity.StorageLocation = dto.StorageLocation;
     }
 }

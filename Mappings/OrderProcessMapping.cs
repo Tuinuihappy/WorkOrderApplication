@@ -36,9 +36,9 @@ public static class OrderProcessMapping
             entity.CreatedDate.ToICT(),
             entity.TimeToUse?.ToICT(),
             entity.Status,
-            entity.WorkOrder?.WorkOrderNumber ?? string.Empty,
+            entity.WorkOrder?.Order ?? string.Empty,
             entity.CreatedBy?.UserName ?? string.Empty,
-            entity.WorkOrder?.LineName,                          // ✅ เพิ่ม lineName
+            entity.WorkOrder?.OrderType,                          // ✅ เพิ่ม OrderType
             entity.ShipmentProcess?.SourceStation,               // ✅ เพิ่ม sourceStation
             entity.ShipmentProcess?.DestinationStation,          // ✅ เพิ่ม destinationStation
             entity.ShipmentProcess?.ExecuteVehicleName           // ✅ เพิ่ม executeVehicleName

@@ -21,7 +21,7 @@ public static class OrderProcessEndpoints
             string? status = null,
             string? fromDate = null,
             string? toDate = null,
-            string? workOrderNumber = null,
+            string? order = null,
             string? createdByName = null,
             string? lineName = null,
             string? sourceStation = null,
@@ -79,9 +79,9 @@ public static class OrderProcessEndpoints
                     (searchId.HasValue && op.Id == searchId.Value) || // ✅ Add ID check
                     op.OrderNumber.ToLower().Contains(lowerSearch) ||
                     op.Status.ToLower().Contains(lowerSearch) ||
-                    op.WorkOrder.WorkOrderNumber.ToLower().Contains(lowerSearch) ||
+                    op.WorkOrder.Order.ToLower().Contains(lowerSearch) ||
                     op.CreatedBy.UserName.ToLower().Contains(lowerSearch) ||
-                    (op.WorkOrder.LineName != null && op.WorkOrder.LineName.ToLower().Contains(lowerSearch)) ||
+                    (op.WorkOrder.OrderType != null && op.WorkOrder.OrderType.ToLower().Contains(lowerSearch)) ||
                     (op.ShipmentProcess != null && op.ShipmentProcess.SourceStation != null && op.ShipmentProcess.SourceStation.ToLower().Contains(lowerSearch)) ||
                     (op.ShipmentProcess != null && op.ShipmentProcess.DestinationStation != null && op.ShipmentProcess.DestinationStation.ToLower().Contains(lowerSearch)) ||
                     (op.ShipmentProcess != null && op.ShipmentProcess.ExecuteVehicleName != null && op.ShipmentProcess.ExecuteVehicleName.ToLower().Contains(lowerSearch))
@@ -108,9 +108,9 @@ public static class OrderProcessEndpoints
             }
 
             // Apply workOrderNumber filter (via WorkOrder navigation property)
-            if (!string.IsNullOrWhiteSpace(workOrderNumber))
+            if (!string.IsNullOrWhiteSpace(order))
             {
-                query = query.Where(op => op.WorkOrder.WorkOrderNumber.Contains(workOrderNumber));
+                query = query.Where(op => op.WorkOrder.Order.Contains(order));
             }
 
             // Apply createdByName filter (via CreatedBy navigation property)
@@ -122,7 +122,7 @@ public static class OrderProcessEndpoints
             // Apply lineName filter (via WorkOrder navigation property)
             if (!string.IsNullOrWhiteSpace(lineName))
             {
-                query = query.Where(op => op.WorkOrder.LineName.Contains(lineName));
+                query = query.Where(op => op.WorkOrder.OrderType.Contains(lineName));
             }
 
             // Apply sourceStation filter (via ShipmentProcess navigation property)
@@ -174,7 +174,7 @@ public static class OrderProcessEndpoints
                     Status = status,
                     FromDate = fromDate,
                     ToDate = toDate,
-                    WorkOrderNumber = workOrderNumber,
+                    Order = order,
                     CreatedByName = createdByName,
                     LineName = lineName,
                     SourceStation = sourceStation,

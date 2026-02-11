@@ -10,11 +10,13 @@ public static class WorkOrderMapping
     public static WorkOrderListDto ToListDto(this WorkOrder entity)
         => new WorkOrderListDto(
             entity.Id,
-            entity.WorkOrderNumber,
-            entity.LineName,
-            entity.ModelName,
+            entity.Order,
+            entity.OrderType,
+            entity.Plant,
+            entity.Material,
             entity.Quantity,
-            entity.CreatedBy?.UserName ?? string.Empty,
+            entity.Unit,
+            entity.BasicFinishDate,
             entity.CreatedDate.ToICT()
         );
 
@@ -22,16 +24,18 @@ public static class WorkOrderMapping
     public static WorkOrderDetailsDto ToDetailsDto(this WorkOrder entity)
         => new WorkOrderDetailsDto(
             entity.Id,
-            entity.WorkOrderNumber,
-            entity.LineName,
-            entity.ModelName,
+            entity.Order,
+            entity.OrderType,
+            entity.Plant,
+            entity.Material,
             entity.Quantity,
+            entity.Unit,
+            entity.BasicFinishDate,
             entity.CreatedDate.ToICT(),
             entity.UpdatedDate?.ToICT(),
-            entity.CreatedByUserId,
-            entity.CreatedBy?.UserName ?? string.Empty,
-            entity.UpdatedByUserId,
-            entity.UpdatedBy?.UserName,
+            entity.BasicFinishDate,
+            entity.CreatedDate.ToICT(),
+            entity.UpdatedDate?.ToICT(),
             entity.Materials.Select(m => m.ToDetailsDto()).ToList()
         );
 
@@ -39,11 +43,13 @@ public static class WorkOrderMapping
     public static WorkOrder ToEntity(this WorkOrderCreateDto dto)
         => new WorkOrder
         {
-            WorkOrderNumber = dto.WorkOrderNumber,
-            LineName = dto.LineName,
-            ModelName = dto.ModelName,
+            Order = dto.Order,
+            OrderType = dto.OrderType,
+            Plant = dto.Plant,
+            Material = dto.Material,
             Quantity = dto.Quantity,
-            CreatedByUserId = dto.CreatedByUserId,
+            Unit = dto.Unit,
+            BasicFinishDate = dto.BasicFinishDate,
             CreatedDate = DateTime.UtcNow,
             Materials = dto.Materials.Select(m => m.ToEntity()).ToList()
         };
@@ -51,11 +57,13 @@ public static class WorkOrderMapping
     // -------------------- Update Entity จาก UpdateDto --------------------
     public static void UpdateFromDto(this WorkOrder entity, WorkOrderUpdateDto dto)
     {
-        entity.WorkOrderNumber = dto.WorkOrderNumber;
-        entity.LineName = dto.LineName;
-        entity.ModelName = dto.ModelName;
+        entity.Order = dto.Order;
+        entity.OrderType = dto.OrderType;
+        entity.Plant = dto.Plant;
+        entity.Material = dto.Material;
         entity.Quantity = dto.Quantity;
-        entity.UpdatedByUserId = dto.UpdatedByUserId;
+        entity.Unit = dto.Unit;
+        entity.BasicFinishDate = dto.BasicFinishDate;
         entity.UpdatedDate = DateTime.UtcNow;
 
         // ❌ ไม่สนใจ Material.Id เดิม

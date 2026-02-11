@@ -37,9 +37,9 @@ public record OrderProcessListDto(
     DateTime CreatedDate,
     DateTime? TimeToUse, // ✅ แสดงเวลาที่จะใช้
     string Status,
-    string WorkOrderNumber,
+    string Order,
     string CreatedByName,
-    string? LineName,
+    string? OrderType,
     string? SourceStation,
     string? DestinationStation,
     string? ExecuteVehicleName
