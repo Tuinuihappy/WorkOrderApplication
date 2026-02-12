@@ -19,17 +19,17 @@ public class MaterialConfiguration : IEntityTypeConfiguration<Material>
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(m => m.Description)
+        builder.Property(m => m.MaterialDescription)
             .IsRequired()
             .HasMaxLength(255);
 
-        builder.Property(m => m.Quantity)
+        builder.Property(m => m.ReqmntQty)
             .IsRequired();
 
-        builder.Property(m => m.RequestPerHour)
+        builder.Property(m => m.QtyWthdrn)
             .IsRequired();
 
-        builder.Property(m => m.Unit)
+        builder.Property(m => m.BUn)
             .IsRequired()
             .HasMaxLength(50);
 

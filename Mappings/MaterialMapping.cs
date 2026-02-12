@@ -10,13 +10,13 @@ public static class MaterialMapping
         => new MaterialListDto(
             entity.Id,
             entity.MaterialNumber,
-            entity.Description,
-            entity.Quantity,
-            entity.WithdrawnQuantity,
-            entity.Unit,
-            entity.OperationActivity,
+            entity.MaterialDescription,
+            entity.ReqmntQty,
+            entity.QtyWthdrn,
+            entity.BUn,
+            entity.OpAc,
             entity.SortString,
-            entity.StorageLocation
+            entity.SLoc
         );
 
     // -------------------- Entity → DetailsDto --------------------
@@ -24,13 +24,13 @@ public static class MaterialMapping
         => new MaterialDetailsDto(
             entity.Id,
             entity.MaterialNumber,
-            entity.Description,
-            entity.Quantity,
-            entity.WithdrawnQuantity,
-            entity.Unit,
-            entity.OperationActivity,
+            entity.MaterialDescription,
+            entity.ReqmntQty,
+            entity.QtyWthdrn,
+            entity.BUn,
+            entity.OpAc,
             entity.SortString,
-            entity.StorageLocation,
+            entity.SLoc,
             entity.WorkOrderId,
             entity.WorkOrder?.Order ?? string.Empty
         );
@@ -40,13 +40,13 @@ public static class MaterialMapping
         => new Material
         {
             MaterialNumber = dto.MaterialNumber,
-            Description = dto.Description,
-            Quantity = dto.Quantity,
-            WithdrawnQuantity = dto.WithdrawnQuantity,
-            Unit = dto.Unit,
-            OperationActivity = dto.OperationActivity,
+            MaterialDescription = dto.MaterialDescription,
+            ReqmntQty = dto.ReqmntQty,
+            QtyWthdrn = dto.QtyWthdrn,
+            BUn = dto.BUn,
+            OpAc = dto.OpAc,
             SortString = dto.SortString,
-            StorageLocation = dto.StorageLocation
+            SLoc = dto.SLoc
         };
 
     // -------------------- UpdateDto → Entity (ใช้ตอน reset Materials ใหม่) --------------------
@@ -55,27 +55,26 @@ public static class MaterialMapping
         {
             // ❌ อย่า copy Id เดิม ให้ EF Core generate ใหม่
             MaterialNumber = dto.MaterialNumber,
-            Description = dto.Description,
-            Quantity = dto.Quantity,
-            WithdrawnQuantity = dto.WithdrawnQuantity,
-            Unit = dto.Unit,
-            OperationActivity = dto.OperationActivity,
+            MaterialDescription = dto.MaterialDescription,
+            ReqmntQty = dto.ReqmntQty,
+            QtyWthdrn = dto.QtyWthdrn,
+            BUn = dto.BUn,
+            OpAc = dto.OpAc,
             SortString = dto.SortString,
-            StorageLocation = dto.StorageLocation
+            SLoc = dto.SLoc
         };
 
     public static Material ToEntity(this MaterialCreateDto dto, int workOrderId)
         => new Material
         {
             MaterialNumber = dto.MaterialNumber,
-            Description = dto.Description,
-            Quantity = dto.Quantity,
-            WithdrawnQuantity = dto.WithdrawnQuantity,
-            Unit = dto.Unit,
-            OperationActivity = dto.OperationActivity,
+            MaterialDescription = dto.MaterialDescription,
+            ReqmntQty = dto.ReqmntQty,
+            QtyWthdrn = dto.QtyWthdrn,
+            BUn = dto.BUn,
+            OpAc = dto.OpAc,
             SortString = dto.SortString,
-            StorageLocation = dto.StorageLocation,
-            RequestPerHour = dto.RequestPerHour,
+            SLoc = dto.SLoc,
             WorkOrderId = workOrderId
         };
 
@@ -83,12 +82,12 @@ public static class MaterialMapping
     public static void UpdateEntity(this Material entity, MaterialUpdateDto dto)
     {
         entity.MaterialNumber = dto.MaterialNumber;
-        entity.Description = dto.Description;
-        entity.Quantity = dto.Quantity;
-        entity.WithdrawnQuantity = dto.WithdrawnQuantity;
-        entity.Unit = dto.Unit;
-        entity.OperationActivity = dto.OperationActivity;
+        entity.MaterialDescription = dto.MaterialDescription;
+        entity.ReqmntQty = dto.ReqmntQty;
+        entity.QtyWthdrn = dto.QtyWthdrn;
+        entity.BUn = dto.BUn;
+        entity.OpAc = dto.OpAc;
         entity.SortString = dto.SortString;
-        entity.StorageLocation = dto.StorageLocation;
+        entity.SLoc = dto.SLoc;
     }
 }

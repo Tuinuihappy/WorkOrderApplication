@@ -3,52 +3,53 @@ namespace WorkOrderApplication.API.Dtos;
 // -------------------- สำหรับ Create --------------------
 public record MaterialCreateDto(
     string MaterialNumber,
-    string Description,
-    decimal Quantity,
-    decimal WithdrawnQuantity,
-    string Unit,
-    string? OperationActivity,
+    string MaterialDescription,
+    decimal ReqmntQty,
+    decimal QtyWthdrn,
+    string BUn,
+    string? OpAc,
     string? SortString,
-    string? StorageLocation
+    string? SLoc
 );
 
 // -------------------- สำหรับ Update --------------------
 public record MaterialUpdateDto(
     int? Id,
     string MaterialNumber,
-    string Description,
-    decimal Quantity,
-    decimal WithdrawnQuantity,
-    string Unit,
-    string? OperationActivity,
+    string MaterialDescription,
+    decimal ReqmntQty,
+    decimal QtyWthdrn,
+    string BUn,
+    string? OpAc,
     string? SortString,
-    string? StorageLocation
+    string? SLoc
 );
 
 // -------------------- สำหรับ List / Table View --------------------
 public record MaterialListDto(
     int Id,
     string MaterialNumber,
-    string Description,
-    decimal Quantity,
-    decimal WithdrawnQuantity,
-    string Unit,
-    string? OperationActivity,
+    string MaterialDescription,
+    decimal ReqmntQty,
+    decimal QtyWthdrn,
+    string BUn,
+    string? OpAc,
     string? SortString,
-    string? StorageLocation
+    string? SLoc
 );
 
 // -------------------- รายละเอียดเต็ม --------------------
 public record MaterialDetailsDto(
     int Id,
+
     string MaterialNumber,
-    string Description,
-    decimal Quantity,
-    decimal WithdrawnQuantity,
-    string Unit,
-    string? OperationActivity,
+    string MaterialDescription,
+    decimal ReqmntQty,
+    decimal QtyWthdrn,
+    string BUn,
+    string? OpAc,
     string? SortString,
-    string? StorageLocation,
+    string? SLoc,
     int WorkOrderId,
     string Order
 );

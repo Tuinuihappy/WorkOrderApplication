@@ -192,9 +192,6 @@ public static class OrderProcessEndpoints
             var orderProcess = await db.OrderProcesses.AsNoTracking()
                 .Include(op => op.CreatedBy)
                 .Include(op => op.WorkOrder)
-                    .ThenInclude(wo => wo.CreatedBy)
-                .Include(op => op.WorkOrder)
-                    .ThenInclude(wo => wo.UpdatedBy)
                 .Include(op => op.WorkOrder)
                     .ThenInclude(wo => wo.Materials)
                 .Include(op => op.OrderMaterials)
@@ -213,7 +210,6 @@ public static class OrderProcessEndpoints
                         .ThenInclude(rm => rm.Material)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
-                .AsSplitQuery()
                 .FirstOrDefaultAsync(op => op.Id == id);
 
             return orderProcess is not null

@@ -6,9 +6,9 @@ public record ReceivedMaterialDetailsDto(
     int ReceivedProcessId,
     int MaterialId,
     string MaterialNumber,
-    string Description,
+    string MaterialDescription,
     int ReceivedQty,
-    string Unit
+    string BUn
 );
 
 // -------------------- ใช้สำหรับ Insert / Update --------------------
@@ -21,7 +21,7 @@ public record ReceivedMaterialUpsertDto(
 public record ReceivedMaterialListDto(
     int Id,
     string MaterialNumber,
-    string Description,
+    string MaterialDescription,
     int ReceivedQty,
-    string Unit
+    string BUn
 );

@@ -6,9 +6,9 @@ public record PreparingMaterialDetailsDto(
     int PreparingProcessId,
     int MaterialId,
     string MaterialNumber,
-    string Description,
+    string MaterialDescription,
     int PreparedQty,
-    string Unit
+    string BUn
 );
 
 // -------------------- ใช้สำหรับ Insert / Update --------------------

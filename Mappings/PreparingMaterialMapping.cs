@@ -13,9 +13,9 @@ public static class PreparingMaterialMapping
             entity.PreparingProcessId,
             entity.MaterialId,
             entity.Material?.MaterialNumber ?? string.Empty,
-            entity.Material?.Description ?? string.Empty,
+            entity.Material?.MaterialDescription ?? string.Empty,
             entity.PreparedQty,
-            entity.Material?.Unit ?? string.Empty
+            entity.Material?.BUn ?? string.Empty
         );
     }
 

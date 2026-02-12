@@ -33,9 +33,6 @@ public static class WorkOrderMapping
             entity.BasicFinishDate,
             entity.CreatedDate.ToICT(),
             entity.UpdatedDate?.ToICT(),
-            entity.BasicFinishDate,
-            entity.CreatedDate.ToICT(),
-            entity.UpdatedDate?.ToICT(),
             entity.Materials.Select(m => m.ToDetailsDto()).ToList()
         );
 

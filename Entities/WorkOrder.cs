@@ -28,9 +28,6 @@ public class WorkOrder
     public DateTime CreatedDate { get; set; }               // วันที่สร้าง WorkOrder
     public DateTime? UpdatedDate { get; set; }              // วันที่แก้ไขล่าสุด (nullable)
 
-    // -------------------- ความสัมพันธ์กับ User (ผู้สร้าง) --------------------
-
-
     // -------------------- ความสัมพันธ์กับ OrderProcess --------------------
     public ICollection<OrderProcess> OrderProcesses { get; set; } = new List<OrderProcess>(); // แต่ละ WorkOrder อาจมีหลายขั้นตอนการดำเนินการ (OrderProcess)
 }

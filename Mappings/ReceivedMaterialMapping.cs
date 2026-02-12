@@ -13,9 +13,9 @@ public static class ReceivedMaterialMapping
             entity.ReceivedProcessId,
             entity.MaterialId,
             entity.Material?.MaterialNumber ?? string.Empty,
-            entity.Material?.Description ?? string.Empty,
+            entity.Material?.MaterialDescription ?? string.Empty,
             entity.ReceivedQty,
-            entity.Material?.Unit ?? string.Empty
+            entity.Material?.BUn ?? string.Empty
         );
     }
 
@@ -25,9 +25,9 @@ public static class ReceivedMaterialMapping
         return new ReceivedMaterialListDto(
             entity.Id,
             entity.Material?.MaterialNumber ?? string.Empty,
-            entity.Material?.Description ?? string.Empty,
+            entity.Material?.MaterialDescription ?? string.Empty,
             entity.ReceivedQty,
-            entity.Material?.Unit ?? string.Empty
+            entity.Material?.BUn ?? string.Empty
         );
     }
 

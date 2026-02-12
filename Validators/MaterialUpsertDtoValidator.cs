@@ -15,28 +15,22 @@ namespace WorkOrderApplication.API.Validators
                 .NotEmpty().WithMessage("MaterialNumber is required. / จำเป็นต้องระบุหมายเลขวัสดุ");
 
             // ------------------------------------------------------------
-            // ✅ Description: ต้องกรอก
+            // ✅ MaterialDescription: ต้องกรอก
             // ------------------------------------------------------------
-            RuleFor(x => x.Description)
-                .NotEmpty().WithMessage("Description is required. / จำเป็นต้องระบุคำอธิบายวัสดุ");
+            RuleFor(x => x.MaterialDescription)
+                .NotEmpty().WithMessage("MaterialDescription is required. / จำเป็นต้องระบุคำอธิบายวัสดุ");
 
             // ------------------------------------------------------------
-            // ✅ Quantity: ต้องมากกว่า 0
+            // ✅ ReqmntQty: ต้องมากกว่า 0
             // ------------------------------------------------------------
-            RuleFor(x => x.Quantity)
-                .GreaterThan(0).WithMessage("Quantity must be greater than 0. / จำนวนวัสดุต้องมากกว่า 0");
+            RuleFor(x => x.ReqmntQty)
+                .GreaterThan(0).WithMessage("ReqmntQty must be greater than 0. / จำนวนวัสดุต้องมากกว่า 0");
 
             // ------------------------------------------------------------
-            // ✅ RequestPerHour: ต้อง ≥ 0 (อนุญาตให้เป็นศูนย์ได้)
+            // ✅ BUn: ต้องกรอก
             // ------------------------------------------------------------
-            RuleFor(x => x.RequestPerHour)
-                .GreaterThanOrEqualTo(0).WithMessage("RequestPerHour must be greater than or equal to 0. / อัตราการขอวัสดุต่อชั่วโมงต้องมากกว่าหรือเท่ากับ 0");
-
-            // ------------------------------------------------------------
-            // ✅ Unit: ต้องกรอก
-            // ------------------------------------------------------------
-            RuleFor(x => x.Unit)
-                .NotEmpty().WithMessage("Unit is required. / จำเป็นต้องระบุหน่วยของวัสดุ");
+            RuleFor(x => x.BUn)
+                .NotEmpty().WithMessage("BUn is required. / จำเป็นต้องระบุหน่วยของวัสดุ");
         }
     }
 
@@ -52,28 +46,22 @@ namespace WorkOrderApplication.API.Validators
                 .NotEmpty().WithMessage("MaterialNumber is required. / จำเป็นต้องระบุหมายเลขวัสดุ");
 
             // ------------------------------------------------------------
-            // ✅ Description: ต้องกรอก
+            // ✅ MaterialDescription: ต้องกรอก
             // ------------------------------------------------------------
-            RuleFor(x => x.Description)
-                .NotEmpty().WithMessage("Description is required. / จำเป็นต้องระบุคำอธิบายวัสดุ");
+            RuleFor(x => x.MaterialDescription)
+                .NotEmpty().WithMessage("MaterialDescription is required. / จำเป็นต้องระบุคำอธิบายวัสดุ");
 
             // ------------------------------------------------------------
-            // ✅ Quantity: ต้องมากกว่า 0
+            // ✅ ReqmntQty: ต้องมากกว่า 0
             // ------------------------------------------------------------
-            RuleFor(x => x.Quantity)
-                .GreaterThan(0).WithMessage("Quantity must be greater than 0. / จำนวนวัสดุต้องมากกว่า 0");
+            RuleFor(x => x.ReqmntQty)
+                .GreaterThan(0).WithMessage("ReqmntQty must be greater than 0. / จำนวนวัสดุต้องมากกว่า 0");
 
             // ------------------------------------------------------------
-            // ✅ RequestPerHour: ต้อง ≥ 0
+            // ✅ BUn: ต้องกรอก
             // ------------------------------------------------------------
-            RuleFor(x => x.RequestPerHour)
-                .GreaterThanOrEqualTo(0).WithMessage("RequestPerHour must be greater than or equal to 0. / อัตราการขอวัสดุต่อชั่วโมงต้องมากกว่าหรือเท่ากับ 0");
-
-            // ------------------------------------------------------------
-            // ✅ Unit: ต้องกรอก
-            // ------------------------------------------------------------
-            RuleFor(x => x.Unit)
-                .NotEmpty().WithMessage("Unit is required. / จำเป็นต้องระบุหน่วยของวัสดุ");
+            RuleFor(x => x.BUn)
+                .NotEmpty().WithMessage("BUn is required. / จำเป็นต้องระบุหน่วยของวัสดุ");
         }
     }
 }

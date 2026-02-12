@@ -6,9 +6,9 @@ public record OrderMaterialDetailsDto(
     int OrderProcessId,
     int MaterialId,
     string MaterialNumber,
-    string Description,
+    string MaterialDescription,
     int OrderQty,
-    string Unit
+    string BUn
 );
 // -------------------- ใช้สำหรับ Insert / Update --------------------
 public record OrderMaterialUpsertDto(

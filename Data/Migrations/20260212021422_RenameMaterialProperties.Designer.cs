@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WorkOrderApplication.API.Data;
@@ -11,9 +12,11 @@ using WorkOrderApplication.API.Data;
 namespace WorkOrderApplication.API.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212021422_RenameMaterialProperties")]
+    partial class RenameMaterialProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -766,6 +769,12 @@ namespace WorkOrderApplication.API.Data.Migrations
                     b.Property<DateTime?>("BasicFinishDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -801,13 +810,23 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("PCE");
 
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("Order")
                         .IsUnique();
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("WorkOrders", (string)null);
                 });
@@ -1005,6 +1024,21 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("OrderProcess");
+                });
+
+            modelBuilder.Entity("WorkOrderApplication.API.Entities.WorkOrder", b =>
+                {
+                    b.HasOne("WorkOrderApplication.API.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("WorkOrderApplication.API.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WorkOrderApplication.API.Entities.Material", b =>
