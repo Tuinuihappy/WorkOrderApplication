@@ -246,7 +246,7 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     b.HasIndex("OrderRecordByIdId");
 
-                    b.ToTable("OrderMissions");
+                    b.ToTable("OrderMissions", (string)null);
                 });
 
             modelBuilder.Entity("WorkOrderApplication.API.Entities.OrderProcess", b =>
@@ -430,7 +430,7 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("OrderRecordByIds");
+                    b.ToTable("OrderRecordByIds", (string)null);
                 });
 
             modelBuilder.Entity("WorkOrderApplication.API.Entities.PreparingMaterial", b =>
@@ -519,7 +519,7 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("WorkOrderApplication.API.Entities.ReceivedMaterial", b =>
