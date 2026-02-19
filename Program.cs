@@ -76,6 +76,7 @@ builder.Services.AddHostedService<OrderRecordBackgroundService>(); // Background
 builder.Services.AddScoped<IValidator<OrderGroupRequestDto>, OrderGroupRequestDtoValidator>(); // Validator for OrderGroupRequestDto
 builder.Services.AddHostedService<OrderRecordByIdBackgroundService>(); // Background Service for OrderRecordById
 builder.Services.AddScoped<OrderProcessNotifier>(); // OrderProcess Notifier Service
+builder.Services.AddHostedService<WorkOrderLineSyncService>(); // Sync DefaultLine for WorkOrders
 
 
 // --------------------------------- 🏭 MES Services --------------------------------------------------

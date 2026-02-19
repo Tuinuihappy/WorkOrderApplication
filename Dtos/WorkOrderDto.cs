@@ -34,6 +34,7 @@ public record WorkOrderDetailsDto(
     int Quantity,
     string Unit,
     DateOnly? BasicFinishDate,
+    string? DefaultLine,
     DateTime CreatedDate,
     DateTime? UpdatedDate,
     List<MaterialDetailsDto> Materials          // ✅ แสดง Materials แบบย่อ
@@ -49,5 +50,6 @@ public record WorkOrderListDto(
     int Quantity,
     string Unit,
     DateOnly? BasicFinishDate,
+    string? DefaultLine,
     DateTime CreatedDate
 );

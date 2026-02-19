@@ -20,6 +20,7 @@ public class WorkOrder
     public int Quantity { get; set; }                       // จำนวนที่จะผลิต
     public string Unit { get; set; } = "PCE";               // หน่วยนับ (Default: PCE)
     public DateOnly? BasicFinishDate { get; set; }          // Basic Finish Date
+    public string? DefaultLine { get; set; }                // Default Line from MES
 
     // -------------------- ความสัมพันธ์กับ Material --------------------
     public ICollection<Material> Materials { get; set; } = new List<Material>();  // รายการวัสดุที่เกี่ยวข้องกับ WorkOrder

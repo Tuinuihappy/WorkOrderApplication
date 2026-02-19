@@ -17,6 +17,7 @@ public static class WorkOrderMapping
             entity.Quantity,
             entity.Unit,
             entity.BasicFinishDate,
+            entity.DefaultLine,
             entity.CreatedDate.ToICT()
         );
 
@@ -31,6 +32,7 @@ public static class WorkOrderMapping
             entity.Quantity,
             entity.Unit,
             entity.BasicFinishDate,
+            entity.DefaultLine,
             entity.CreatedDate.ToICT(),
             entity.UpdatedDate?.ToICT(),
             entity.Materials.Select(m => m.ToDetailsDto()).ToList()

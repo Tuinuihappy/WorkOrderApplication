@@ -21,10 +21,10 @@ namespace WorkOrderApplication.API.Validators
                 .NotEmpty().WithMessage("MaterialDescription is required. / จำเป็นต้องระบุคำอธิบายวัสดุ");
 
             // ------------------------------------------------------------
-            // ✅ ReqmntQty: ต้องมากกว่า 0
+            // ✅ ReqmntQty: ต้องมากกว่าหรือเท่ากับ 0
             // ------------------------------------------------------------
             RuleFor(x => x.ReqmntQty)
-                .GreaterThan(0).WithMessage("ReqmntQty must be greater than 0. / จำนวนวัสดุต้องมากกว่า 0");
+                .GreaterThanOrEqualTo(0).WithMessage("ReqmntQty must be greater than or equal to 0. / จำนวนวัสดุต้องมากกว่าหรือเท่ากับ 0");
 
             // ------------------------------------------------------------
             // ✅ BUn: ต้องกรอก
@@ -52,10 +52,10 @@ namespace WorkOrderApplication.API.Validators
                 .NotEmpty().WithMessage("MaterialDescription is required. / จำเป็นต้องระบุคำอธิบายวัสดุ");
 
             // ------------------------------------------------------------
-            // ✅ ReqmntQty: ต้องมากกว่า 0
+            // ✅ ReqmntQty: ต้องมากกว่าหรือเท่ากับ 0
             // ------------------------------------------------------------
             RuleFor(x => x.ReqmntQty)
-                .GreaterThan(0).WithMessage("ReqmntQty must be greater than 0. / จำนวนวัสดุต้องมากกว่า 0");
+                .GreaterThanOrEqualTo(0).WithMessage("ReqmntQty must be greater than or equal to 0. / จำนวนวัสดุต้องมากกว่าหรือเท่ากับ 0");
 
             // ------------------------------------------------------------
             // ✅ BUn: ต้องกรอก

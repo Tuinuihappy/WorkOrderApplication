@@ -49,6 +49,7 @@ public static class WorkOrderEndpoints
         group.MapPost("/", async (
             WorkOrderCreateDto dto,
             AppDbContext db,
+            MesTdcClient mes,
             IValidator<WorkOrderCreateDto> validator) =>
         {
             var validation = await validator.ValidateAsync(dto);
@@ -56,6 +57,27 @@ public static class WorkOrderEndpoints
                 return Results.BadRequest(validation.Errors);
 
             var workOrder = dto.ToEntity();
+
+            // ✅ ดึง DefaultLine จาก MES ทันทีเมื่อสร้าง WorkOrder
+            try
+            {
+                var routingData = $"0}}{dto.Order}";
+                var raw = await mes.CallAsync(testType: "GET_MO_INFO", routingData: routingData);
+
+                if (raw.TryGetProperty("description", out var desc) &&
+                    desc.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                    desc.TryGetProperty("Default Line", out var lineProp) &&
+                    lineProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    workOrder.DefaultLine = lineProp.GetString();
+                }
+            }
+            catch
+            {
+                // ⚠️ ถ้า MES ติดต่อไม่ได้ ไม่ block การสร้าง WorkOrder
+                // Background Service จะ sync ให้ภายหลัง
+            }
+
             db.WorkOrders.Add(workOrder);
             await db.SaveChangesAsync();
 
