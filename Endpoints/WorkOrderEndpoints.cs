@@ -12,18 +12,67 @@ public static class WorkOrderEndpoints
 {
     public static RouteGroupBuilder MapWorkOrderEndpoints(this RouteGroupBuilder group)
     {
-        // -------------------- GET: /api/workorders --------------------
-        group.MapGet("/", async (AppDbContext db) =>
+        // -------------------- GET: /api/workorders (Pagination + Filter) --------------------
+        group.MapGet("/", async (
+            AppDbContext db,
+            int? page,
+            int? pageSize,
+            string? search) =>
         {
-            var workOrders = await db.WorkOrders
+            var currentPage = page ?? 1;
+            var size = pageSize ?? 10;
+            if (currentPage < 1) currentPage = 1;
+            if (size < 1) size = 10;
+            if (size > 100) size = 100;
+
+            // ✅ AsNoTracking: ไม่ track entity (ลด memory + เร็วขึ้น)
+            IQueryable<WorkOrder> query = db.WorkOrders.AsNoTracking();
+
+            // ✅ Search ค้นหาจาก Order, OrderType, Plant, Material พร้อมกัน
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(w =>
+                    w.Order.Contains(term) ||
+                    w.OrderType.Contains(term) ||
+                    w.Plant.Contains(term) ||
+                    w.Material.Contains(term));
+            }
+
+            // ✅ Count (sequential - DbContext ไม่ thread-safe)
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)size);
+
+            // ✅ Pagination + Inline Projection (ดึงเฉพาะ column ที่ใช้)
+            var workOrders = await query
                 .OrderByDescending(w => w.CreatedDate)
-                .Select(w => w.ToListDto())
+                .Skip((currentPage - 1) * size)
+                .Take(size)
+                .Select(w => new WorkOrderListDto(
+                    w.Id,
+                    w.Order,
+                    w.OrderType,
+                    w.Plant,
+                    w.Material,
+                    w.Quantity,
+                    w.Unit,
+                    w.BasicFinishDate,
+                    w.DefaultLine,
+                    w.CreatedDate
+                ))
                 .ToListAsync();
 
-            return Results.Ok(workOrders);
+            return Results.Ok(new
+            {
+                totalCount,
+                totalPages,
+                currentPage,
+                pageSize = size,
+                data = workOrders
+            });
         })
         .WithName("GetWorkOrders")
-        .Produces<List<WorkOrderListDto>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status500InternalServerError)
         .WithOpenApi();
 
@@ -31,6 +80,8 @@ public static class WorkOrderEndpoints
         group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
         {
             var workOrder = await db.WorkOrders
+                .AsNoTracking()          // ✅ ไม่ track entity
+                .AsSplitQuery()          // ✅ แยก query ป้องกัน cartesian explosion
                 .Include(w => w.Materials)
                 .Include(w => w.OrderProcesses)
                 .FirstOrDefaultAsync(w => w.Id == id);

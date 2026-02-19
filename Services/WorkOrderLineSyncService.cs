@@ -1,6 +1,5 @@
 using System.Text.Json;
 using WorkOrderApplication.API.Data;
-using WorkOrderApplication.API.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace WorkOrderApplication.API.Services;
@@ -9,6 +8,9 @@ public class WorkOrderLineSyncService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<WorkOrderLineSyncService> _logger;
+
+    // ✅ Concurrency limit สำหรับ MES calls (ป้องกัน overload)
+    private const int MaxConcurrency = 5;
 
     public WorkOrderLineSyncService(
         IServiceScopeFactory scopeFactory,
@@ -20,7 +22,7 @@ public class WorkOrderLineSyncService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("[WorkOrderLineSyncService] 🚀 Service started");
+        _logger.LogInformation("[WorkOrderLineSyncService] 🚀 Service started (MaxConcurrency={Max})", MaxConcurrency);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -33,73 +35,89 @@ public class WorkOrderLineSyncService : BackgroundService
                 _logger.LogError(ex, "[WorkOrderLineSyncService] ❌ Error during sync");
             }
 
-            // Wait 1 minute
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
 
+    /// <summary>
+    /// Lightweight DTO สำหรับ projection (ไม่ track entity)
+    /// </summary>
+    private record WorkOrderSlim(int Id, string Order, string? DefaultLine);
+
     private async Task SyncDefaultLinesAsync(CancellationToken token)
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var mesClient = scope.ServiceProvider.GetRequiredService<MesTdcClient>();
 
-        // ✅ ดึง WorkOrder ทั้งหมด
+        // ✅ 1. Projection: ดึงเฉพาะ field ที่ต้องการ + AsNoTracking (ลด memory)
         var workOrders = await db.WorkOrders
-            .OrderByDescending(w => w.CreatedDate)
+            .AsNoTracking()
+            .Select(w => new WorkOrderSlim(w.Id, w.Order, w.DefaultLine))
             .ToListAsync(token);
 
         if (!workOrders.Any()) return;
 
         _logger.LogInformation("[WorkOrderLineSyncService] 🔄 Syncing {Count} orders", workOrders.Count);
 
-        int updatedCount = 0;
+        // ✅ 2. Parallel MES calls ด้วย SemaphoreSlim (จำกัด concurrency)
+        var semaphore = new SemaphoreSlim(MaxConcurrency);
+        var results = new System.Collections.Concurrent.ConcurrentBag<(int Id, string NewLine)>();
 
-        foreach (var wo in workOrders)
+        var tasks = workOrders.Select(async wo =>
         {
-            if (token.IsCancellationRequested) break;
-
+            await semaphore.WaitAsync(token);
             try
             {
                 var routingData = $"0}}{wo.Order}";
-
-                var raw = await mesClient.CallAsync(
-                    testType: "GET_MO_INFO",
-                    routingData: routingData
-                );
-
-                // ✅ ดึงค่า DefaultLine ใหม่จาก MES
+                var raw = await mesClient.CallAsync(testType: "GET_MO_INFO", routingData: routingData);
                 var newDefaultLine = ExtractDefaultLine(raw);
 
-                // ✅ อัพเดทเฉพาะเมื่อค่าเปลี่ยนแปลง
+                // ✅ เก็บเฉพาะที่เปลี่ยนแปลง
                 if (newDefaultLine is not null && newDefaultLine != wo.DefaultLine)
                 {
+                    results.Add((wo.Id, newDefaultLine));
                     _logger.LogInformation(
-                        "[WorkOrderLineSyncService] 📝 Order {Order}: DefaultLine changed '{Old}' → '{New}'",
+                        "[WorkOrderLineSyncService] 📝 Order {Order}: '{Old}' → '{New}'",
                         wo.Order, wo.DefaultLine ?? "(null)", newDefaultLine);
-
-                    wo.DefaultLine = newDefaultLine;
-                    wo.UpdatedDate = DateTime.UtcNow;
-                    updatedCount++;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "[WorkOrderLineSyncService] ⚠️ Failed for Order {Order}", wo.Order);
             }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
 
-            // Small delay to be nice to MES
-            await Task.Delay(100, token);
-        }
+        await Task.WhenAll(tasks);
 
-        if (updatedCount > 0)
+        // ✅ 3. Batch update ด้วย ExecuteUpdateAsync (อัพเดทตรงที่ DB ไม่ต้อง track)
+        if (results.Any())
         {
-            await db.SaveChangesAsync(token);
-            _logger.LogInformation("[WorkOrderLineSyncService] ✅ Updated {Count} orders", updatedCount);
+            foreach (var (id, newLine) in results)
+            {
+                await db.WorkOrders
+                    .Where(w => w.Id == id)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(w => w.DefaultLine, newLine)
+                        .SetProperty(w => w.UpdatedDate, DateTime.UtcNow),
+                    token);
+            }
+
+            _logger.LogInformation(
+                "[WorkOrderLineSyncService] ✅ Updated {Count}/{Total} orders in {Elapsed}ms",
+                results.Count, workOrders.Count, sw.ElapsedMilliseconds);
         }
         else
         {
-            _logger.LogInformation("[WorkOrderLineSyncService] ✅ No changes detected");
+            _logger.LogInformation(
+                "[WorkOrderLineSyncService] ✅ No changes ({Total} checked in {Elapsed}ms)",
+                workOrders.Count, sw.ElapsedMilliseconds);
         }
     }
 

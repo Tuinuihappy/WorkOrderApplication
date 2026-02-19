@@ -61,6 +61,11 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
             .HasForeignKey(o => o.WorkOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-
+        // -------------------- Indexes สำหรับ Performance --------------------
+        // Order มี Unique Index อยู่แล้ว (line 22)
+        builder.HasIndex(w => w.CreatedDate);   // ✅ Sort pagination
+        builder.HasIndex(w => w.OrderType);     // ✅ Search filter
+        builder.HasIndex(w => w.Plant);         // ✅ Search filter 
+        builder.HasIndex(w => w.Material);      // ✅ Search filter
     }
 }

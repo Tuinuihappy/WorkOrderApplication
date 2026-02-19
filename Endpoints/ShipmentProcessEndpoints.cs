@@ -213,65 +213,6 @@ public static class ShipmentProcessEndpoints
             }
         });
         
-        // // -------------------- PATCH /api/shipmentprocesses/{id}/arrived --------------------
-        // group.MapPatch("/{id:int}/arrived", async (
-        //     int id,
-        //     AppDbContext db,
-        //     ILoggerFactory loggerFactory,
-        //     IHubContext<ShipmentProcessHub> hubContext) =>
-        // {
-        //     var _logger = loggerFactory.CreateLogger("ShipmentProcess");
-
-        //     // 🔍 หา ShipmentProcess พร้อม OrderProcess ที่เกี่ยวข้อง
-        //     var shipment = await db.ShipmentProcesses
-        //         .Include(s => s.OrderProcess)
-        //         .FirstOrDefaultAsync(s => s.Id == id);
-
-        //     if (shipment is null)
-        //     {
-        //         return Results.NotFound(new { error = $"ShipmentProcess with Id {id} not found." });
-        //     }
-
-        //     if (shipment.OrderProcess is null)
-        //     {
-        //         return Results.BadRequest(new { error = $"ShipmentProcess {id} is not linked to any OrderProcess." });
-        //     }
-
-        //     // ✅ ตั้งเวลา ArrivalTime โดยใช้เวลาปัจจุบัน (ไม่ต้องส่งจาก client)
-        //     shipment.ArrivalTime = DateTime.UtcNow;
-
-        //     // ✅ อัปเดทสถานะของ OrderProcess เป็น Awaiting Pickup
-        //     shipment.OrderProcess.Status = "Awaiting Pickup";
-
-        //     await db.SaveChangesAsync();
-
-        //     // 📡 แจ้ง UI ผ่าน SignalR
-        //     await hubContext.Clients.All.SendAsync("ShipmentArrived", new
-        //     {
-        //         shipment.Id,
-        //         shipment.OrderName,
-        //         shipment.ArrivalTime,
-        //         shipment.OrderProcess.Status
-        //     });
-
-        //     _logger.LogInformation("[Shipment ✅] ShipmentProcess {Id} marked as Arrived (OrderProcessId={OrderProcessId})",
-        //         shipment.Id, shipment.OrderProcess.Id);
-
-        //     return Results.Ok(new
-        //     {
-        //         Message = $"ShipmentProcess #{shipment.Id} marked as arrived.",
-        //         shipment.OrderProcess.Id,
-        //         shipment.OrderProcess.Status,
-        //         shipment.ArrivalTime
-        //     });
-        // })
-        // .WithName("MarkShipmentAsArrived")
-        // .WithSummary("Mark shipment as arrived (auto set ArrivalTime)")
-        // .WithDescription("อัปเดท OrderProcess.Status = 'Awaiting Pickup' และเก็บเวลา ArrivalTime เป็นเวลาปัจจุบัน")
-        // .Produces(StatusCodes.Status200OK)
-        // .Produces(StatusCodes.Status404NotFound)
-        // .Produces(StatusCodes.Status400BadRequest);
-        
         // -------------------- PATCH /api/shipmentprocesses/{id}/arrived --------------------
         group.MapPatch("/{id:int}/arrived", async (
             int id,
