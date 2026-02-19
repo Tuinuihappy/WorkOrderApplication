@@ -77,6 +77,29 @@ builder.Services.AddScoped<IValidator<OrderGroupRequestDto>, OrderGroupRequestDt
 builder.Services.AddHostedService<OrderRecordByIdBackgroundService>(); // Background Service for OrderRecordById
 builder.Services.AddScoped<OrderProcessNotifier>(); // OrderProcess Notifier Service
 
+
+// --------------------------------- 🏭 MES Services --------------------------------------------------
+builder.Services.Configure<MesOptions>(
+    builder.Configuration.GetSection("Mes"));
+
+// Register HTTP clients and custom clients
+builder.Services.AddHttpClient<MesTdcClient>();
+builder.Services.AddScoped(sp =>
+{
+    var opt = sp.GetRequiredService<IOptions<MesOptions>>().Value;
+    var http = sp.GetRequiredService<HttpClient>();
+    return new MesTdcClient(http, opt);
+});
+
+// Register HTTP clients and custom clients
+builder.Services.AddHttpClient<MesQueryClient>();
+builder.Services.AddScoped(sp =>
+{
+    var opt = sp.GetRequiredService<IOptions<MesOptions>>().Value;
+    var http = sp.GetRequiredService<HttpClient>();
+    return new MesQueryClient(http, opt);
+});
+
 // ------------------------------------ Add Swagger -------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -114,6 +137,10 @@ app.MapGroup("/api/cancelledprocesses").WithTags("CancelProcesses").MapCancelled
 app.MapGroup("/api/ordergroup").WithTags("OrderGroup").MapOrderProxyEndpoints(); // RIOT OrderGroup
 app.MapGroup("/api/orderGroupAMR").WithTags("OrderGroupAMR").MapOrderGroupAMREndpoints(); // RIOT OrderGroupAMR
 app.MapGroup("/api/vehicleProxy").WithTags("VehicleProxy").MapVehicleProxyEndpoints(); // Vehicle Proxy
+app.MapGroup("/api/mes").WithTags("MES").MapMesEndpoints(); // MES Endpoints
+
+
+
 
 
 

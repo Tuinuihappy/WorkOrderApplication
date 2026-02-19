@@ -8,7 +8,7 @@ public record WorkOrderCreateDto(
     string Material,
     int Quantity,
     string Unit,
-    DateTime? BasicFinishDate,
+    DateOnly? BasicFinishDate,
     List<MaterialCreateDto> Materials     // ✅ สร้างพร้อมกับ Materials
 );
 
@@ -20,7 +20,7 @@ public record WorkOrderUpdateDto(
     string Material,
     int Quantity,
     string Unit,
-    DateTime? BasicFinishDate,
+    DateOnly? BasicFinishDate,
     List<MaterialUpdateDto> Materials     // ✅ อัพเดทพร้อม Materials
 );
 
@@ -33,7 +33,7 @@ public record WorkOrderDetailsDto(
     string Material,
     int Quantity,
     string Unit,
-    DateTime? BasicFinishDate,
+    DateOnly? BasicFinishDate,
     DateTime CreatedDate,
     DateTime? UpdatedDate,
     List<MaterialDetailsDto> Materials          // ✅ แสดง Materials แบบย่อ
@@ -48,6 +48,6 @@ public record WorkOrderListDto(
     string Material,
     int Quantity,
     string Unit,
-    DateTime? BasicFinishDate,
+    DateOnly? BasicFinishDate,
     DateTime CreatedDate
 );
