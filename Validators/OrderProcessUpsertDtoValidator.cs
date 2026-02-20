@@ -25,5 +25,12 @@ public class OrderProcessUpsertDtoValidator : AbstractValidator<OrderProcessUpse
         // ------------------------------------------------------------
         RuleFor(x => x.CreatedByUserId)
             .GreaterThan(0).WithMessage("CreatedByUserId must be a valid id. / รหัสผู้สร้างต้องมากกว่า 0 และต้องถูกต้อง");
+
+        // ------------------------------------------------------------
+        // ✅ 4. DestinationStation: ต้องกรอก และไม่เกิน 50 ตัวอักษร
+        // ------------------------------------------------------------
+        RuleFor(x => x.DestinationStation)
+            .NotEmpty().WithMessage("DestinationStation is required. / จำเป็นต้องระบุสถานีปลายทาง (DestinationStation)")
+            .MaximumLength(50).WithMessage("DestinationStation must not exceed 50 characters. / สถานีปลายทางต้องไม่เกิน 50 ตัวอักษร");
     }
 }

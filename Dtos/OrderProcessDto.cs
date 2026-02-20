@@ -7,6 +7,7 @@ public record OrderProcessDetailsDto(
     DateTime CreatedDate,
     DateTime? TimeToUse, // ✅ เพิ่ม TimeToUse
     string Status,
+    string DestinationStation, // ✅ เพิ่ม DestinationStation - Required
     int CreatedByUserId,
     string CreatedByName,
     int WorkOrderId,
@@ -24,6 +25,7 @@ public record OrderProcessDetailsDto(
 // -------------------- ใช้สำหรับ Insert / Update --------------------
 public record OrderProcessUpsertDto(
     string OrderNumber,
+    string DestinationStation, // ✅ Required
     int WorkOrderId,
     int CreatedByUserId,
     DateTimeOffset? TimeToUse, // ✅ Client ใส่แค่เวลา เช่น "14:30:00"
@@ -41,6 +43,6 @@ public record OrderProcessListDto(
     string CreatedByName,
     string? OrderType,
     string? SourceStation,
-    string? DestinationStation,
+    string DestinationStation, // ✅ Required
     string? ExecuteVehicleName
 );

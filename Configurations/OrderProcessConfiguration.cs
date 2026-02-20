@@ -30,6 +30,12 @@ public class OrderProcessConfiguration : IEntityTypeConfiguration<OrderProcess>
         builder.Property(op => op.CreatedDate)
                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+        // ✅ DestinationStation
+        builder.Property(op => op.DestinationStation)
+               .IsRequired()
+               .HasMaxLength(50)
+               .HasDefaultValue("");
+
         // ✅ TimeToUse: เก็บวันปัจจุบัน + เวลา (ตามที่ Client ส่งมา)
         builder.Property(op => op.TimeToUse)
                .HasColumnType("timestamp with time zone")   // สำหรับ SQL Server/SQLite

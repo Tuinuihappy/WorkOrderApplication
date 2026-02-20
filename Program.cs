@@ -125,7 +125,7 @@ app.UseSwaggerUI(c =>
 app.MapGroup("/api/workorders").WithTags("WorkOrders").MapWorkOrderEndpoints(); // WorkOrders
 app.MapGroup("/api/materials").WithTags("Materials").MapMaterialEndpoints(); // Materials
 app.MapGroup("/api/users").WithTags("Users").MapUserEndpoints(); // Users
-app.MapGroup("/api/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints(); // ConfirmProcesses
+app.MapGroup("/api/orderprocesses/{orderProcessId:int}/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints(); // ConfirmProcesses
 app.MapGroup("/api/orderprocesses").WithTags("OrderProcesses").MapOrderProcessEndpoints(); // OrderProcesses
 app.MapGroup("/api/ordermaterials").WithTags("OrderMaterials").MapOrderMaterialEndpoints(); // OrderMaterials
 app.MapGroup("/api/preparingprocesses").WithTags("PreparingProcesses").MapPreparingProcessEndpoints(); // PreparingProcesses

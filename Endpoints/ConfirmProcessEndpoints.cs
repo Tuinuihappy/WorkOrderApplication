@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using FluentValidation;
-using FluentValidation.Results;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
 using WorkOrderApplication.API.Mappings;
-using WorkOrderApplication.API.Services; // ✅ เพิ่ม
+using WorkOrderApplication.API.Services;
 
 namespace WorkOrderApplication.API.Endpoints;
 
@@ -13,40 +11,43 @@ public static class ConfirmProcessEndpoints
 {
     public static RouteGroupBuilder MapConfirmProcessEndpoints(this RouteGroupBuilder group)
     {
-        // -------------------- GET /api/confirmprocesses --------------------
-        group.MapGet("/", async (AppDbContext db) =>
+        // -------------------- GET /api/orderprocesses/{orderProcessId}/confirmprocesses --------------------
+        group.MapGet("/", async (int orderProcessId, AppDbContext db) =>
         {
-            var items = await db.ConfirmProcesses.AsNoTracking().ToListAsync();
+            var items = await db.ConfirmProcesses
+                .AsNoTracking()
+                .Where(c => c.OrderProcessId == orderProcessId)
+                .ToListAsync();
             return Results.Ok(items.Select(c => c.ToListDto()));
         });
 
-        // -------------------- GET /api/confirmprocesses/{id} --------------------
-        group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
+        // -------------------- GET /api/orderprocesses/{orderProcessId}/confirmprocesses/{id} --------------------
+        group.MapGet("/{id:int}", async (int orderProcessId, int id, AppDbContext db) =>
         {
-            var entity = await db.ConfirmProcesses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+            var entity = await db.ConfirmProcesses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id && c.OrderProcessId == orderProcessId);
             return entity is not null
                 ? Results.Ok(entity.ToDetailsDto())
                 : Results.NotFound();
         });
 
-        // -------------------- POST /api/confirmprocesses --------------------
+        // -------------------- POST /api/orderprocesses/{orderProcessId}/confirmprocesses --------------------
         group.MapPost("/", async (
-            ConfirmProcessUpsertDto dto,
+            int orderProcessId,
             AppDbContext db,
-            IValidator<ConfirmProcessUpsertDto> validator,
-            OrderProcessNotifier notifier,   // ✅ ใช้สำหรับ broadcast
+            OrderProcessNotifier notifier,
             ILoggerFactory loggerFactory
         ) =>
         {
             var _logger = loggerFactory.CreateLogger("ConfirmProcess");
 
-            // ✅ Validate ข้อมูลจาก DTO
-            ValidationResult validationResult = await validator.ValidateAsync(dto);
-            if (!validationResult.IsValid)
-                return Results.BadRequest(validationResult.Errors);
-
-            // ✅ แปลง DTO -> Entity แล้วเพิ่มเข้า DbContext
-            var entity = dto.ToEntity();
+            // ✅ สร้าง ConfirmProcess โดยใช้ orderProcessId จาก URL
+            var entity = new Entities.ConfirmProcess
+            {
+                OrderProcessId = orderProcessId,
+                ConfirmedDate = DateTime.UtcNow
+            };
             db.ConfirmProcesses.Add(entity);
 
             // ✅ หา OrderProcess ที่เกี่ยวข้อง
@@ -58,10 +59,10 @@ public static class ConfirmProcessEndpoints
                 .Include(op => op.ReceiveProcess)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
-                .FirstOrDefaultAsync(op => op.Id == dto.OrderProcessId);
+                .FirstOrDefaultAsync(op => op.Id == orderProcessId);
 
             if (orderProcess is null)
-                return Results.NotFound($"OrderProcess {dto.OrderProcessId} not found.");
+                return Results.NotFound($"OrderProcess {orderProcessId} not found.");
 
             // ✅ อัปเดตสถานะของ OrderProcess
             orderProcess.Status = "Preparing";
@@ -92,7 +93,7 @@ public static class ConfirmProcessEndpoints
             // 🧠 Logging
             _logger.LogInformation("📢 ConfirmProcess created for OrderProcessId {Id}", updated.Id);
 
-            return Results.Created($"/api/confirmprocesses/{entity.Id}", confirmDto);
+            return Results.Created($"/api/orderprocesses/{orderProcessId}/confirmprocesses/{entity.Id}", confirmDto);
         })
         .WithName("CreateConfirmProcess")
         .WithSummary("Create confirm process")
@@ -103,30 +104,24 @@ public static class ConfirmProcessEndpoints
 
 
 
-        // -------------------- PUT /api/confirmprocesses/{id} --------------------
+        // -------------------- PUT /api/orderprocesses/{orderProcessId}/confirmprocesses/{id} --------------------
         group.MapPut("/{id:int}", async (
+            int orderProcessId,
             int id,
-            ConfirmProcessUpsertDto dto,
             AppDbContext db,
-            IValidator<ConfirmProcessUpsertDto> validator,
             OrderProcessNotifier notifier,
             ILoggerFactory loggerFactory
         ) =>
         {
             var _logger = loggerFactory.CreateLogger("ConfirmProcess");
 
-            // ✅ Validate input
-            ValidationResult validationResult = await validator.ValidateAsync(dto);
-            if (!validationResult.IsValid)
-                return Results.BadRequest(validationResult.Errors);
-
             // ✅ หา entity เดิม
-            var entity = await db.ConfirmProcesses.FirstOrDefaultAsync(c => c.Id == id);
+            var entity = await db.ConfirmProcesses.FirstOrDefaultAsync(c => c.Id == id && c.OrderProcessId == orderProcessId);
             if (entity is null)
-                return Results.NotFound($"ConfirmProcess {id} not found.");
+                return Results.NotFound($"ConfirmProcess {id} not found for OrderProcess {orderProcessId}.");
 
-            // ✅ อัปเดตค่าจาก DTO → Entity
-            entity.UpdateEntity(dto);
+            // ✅ อัปเดต ConfirmedDate
+            entity.ConfirmedDate = DateTime.UtcNow;
 
             // ✅ หา OrderProcess ที่เกี่ยวข้อง
             var orderProcess = await db.OrderProcesses
@@ -138,12 +133,12 @@ public static class ConfirmProcessEndpoints
                 .Include(op => op.ReceiveProcess)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
-                .FirstOrDefaultAsync(op => op.Id == entity.OrderProcessId);
+                .FirstOrDefaultAsync(op => op.Id == orderProcessId);
 
             if (orderProcess is null)
-                return Results.NotFound($"OrderProcess {entity.OrderProcessId} not found.");
+                return Results.NotFound($"OrderProcess {orderProcessId} not found.");
 
-            // ✅ อัปเดตสถานะของ OrderProcess (Confirm แล้วสถานะยังอยู่ที่ Preparing)
+            // ✅ อัปเดตสถานะของ OrderProcess
             orderProcess.Status = "Preparing";
             await db.SaveChangesAsync();
 
@@ -151,7 +146,7 @@ public static class ConfirmProcessEndpoints
             var orderDto = orderProcess.ToDetailsDto();
             var confirmDto = entity.ToDetailsDto();
 
-            // ✅ Broadcast ทั้งภาพรวมและย่อย (ใช้ Id แทน OrderNumber)
+            // ✅ Broadcast ทั้งภาพรวมและย่อย
             await notifier.BroadcastUpdatedAsync(orderProcess.Id, orderDto);
             await notifier.BroadcastConfirmUpdatedAsync(orderProcess.Id, confirmDto);
 
@@ -169,20 +164,21 @@ public static class ConfirmProcessEndpoints
 
 
 
-        // -------------------- DELETE /api/confirmprocesses/{id} --------------------
+        // -------------------- DELETE /api/orderprocesses/{orderProcessId}/confirmprocesses/{id} --------------------
         group.MapDelete("/{id:int}", async (
+            int orderProcessId,
             int id,
             AppDbContext db,
-            OrderProcessNotifier notifier,   // ✅ ใช้สำหรับ broadcast
+            OrderProcessNotifier notifier,
             ILoggerFactory loggerFactory
         ) =>
         {
             var _logger = loggerFactory.CreateLogger("ConfirmProcess");
 
             // ✅ หา ConfirmProcess ที่จะลบ
-            var entity = await db.ConfirmProcesses.FirstOrDefaultAsync(c => c.Id == id);
+            var entity = await db.ConfirmProcesses.FirstOrDefaultAsync(c => c.Id == id && c.OrderProcessId == orderProcessId);
             if (entity is null)
-                return Results.NotFound($"ConfirmProcess {id} not found.");
+                return Results.NotFound($"ConfirmProcess {id} not found for OrderProcess {orderProcessId}.");
 
             // ✅ หา OrderProcess ที่เกี่ยวข้อง
             var orderProcess = await db.OrderProcesses
@@ -194,10 +190,10 @@ public static class ConfirmProcessEndpoints
                 .Include(op => op.ReceiveProcess)
                 .Include(op => op.CancelledProcess)
                 .Include(op => op.ReturnProcess)
-                .FirstOrDefaultAsync(op => op.Id == entity.OrderProcessId);
+                .FirstOrDefaultAsync(op => op.Id == orderProcessId);
 
             if (orderProcess is null)
-                return Results.NotFound($"OrderProcess {entity.OrderProcessId} not found.");
+                return Results.NotFound($"OrderProcess {orderProcessId} not found.");
 
             // ✅ อัปเดตสถานะของ OrderProcess กลับไป Pending
             orderProcess.Status = "Pending";

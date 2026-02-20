@@ -10,6 +10,7 @@ public class OrderProcess
     
     public ICollection<OrderMaterial> OrderMaterials { get; set; } = new List<OrderMaterial>();
     public string Status { get; set; } = "Order Placed"; // Pending, Preparing, Shipped, Received, Delivered
+    public string DestinationStation { get; set; } = default!; // ✅ Required
     // -----------------------------------------------------------------------------------------------------------
     public int WorkOrderId { get; set; } // Foreign Key
     public WorkOrder WorkOrder { get; set; } = default!; // Navigation Property

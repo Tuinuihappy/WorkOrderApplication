@@ -14,6 +14,7 @@ public static class OrderProcessMapping
             entity.CreatedDate.ToICT(),
             entity.TimeToUse?.ToICT(),   // ✅ แปลงกลับ ICT เวลาอ่านออก
             entity.Status,
+            entity.DestinationStation,   // ✅ Map DestinationStation
             entity.CreatedByUserId,
             entity.CreatedBy?.UserName ?? string.Empty,
             entity.WorkOrderId,
@@ -40,7 +41,7 @@ public static class OrderProcessMapping
             entity.CreatedBy?.UserName ?? string.Empty,
             entity.WorkOrder?.OrderType,                          // ✅ เพิ่ม OrderType
             entity.ShipmentProcess?.SourceStation,               // ✅ เพิ่ม sourceStation
-            entity.ShipmentProcess?.DestinationStation,          // ✅ เพิ่ม destinationStation
+            entity.DestinationStation,                           // ✅ ใช้ DestinationStation จาก OrderProcess
             entity.ShipmentProcess?.ExecuteVehicleName           // ✅ เพิ่ม executeVehicleName
         );
 
@@ -53,6 +54,7 @@ public static class OrderProcessMapping
             WorkOrderId = dto.WorkOrderId,
             CreatedByUserId = dto.CreatedByUserId,
             Status = "Order Placed",
+            DestinationStation = dto.DestinationStation, // ✅ Map DestinationStation
             CreatedDate = DateTime.UtcNow,
             TimeToUse = dto.TimeToUse?.UtcDateTime,   // ✅ แปลงเป็น UTC ก่อนเก็บ
             OrderMaterials = dto.OrderMaterials?
@@ -67,6 +69,7 @@ public static class OrderProcessMapping
         entity.OrderNumber = dto.OrderNumber;
         entity.WorkOrderId = dto.WorkOrderId;
         entity.CreatedByUserId = dto.CreatedByUserId;
+        entity.DestinationStation = dto.DestinationStation; // ✅ Update DestinationStation
         entity.TimeToUse = dto.TimeToUse?.UtcDateTime;
 
         // ✅ อัปเดต Materials (replace ทั้งชุด)

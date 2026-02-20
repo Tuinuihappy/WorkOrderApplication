@@ -15,15 +15,12 @@ public static class WorkOrderEndpoints
         // -------------------- GET: /api/workorders (Pagination + Filter) --------------------
         group.MapGet("/", async (
             AppDbContext db,
-            int? page,
-            int? pageSize,
-            string? search) =>
+            int page = 1,
+            int pageSize = 10,
+            string? search = null) =>
         {
-            var currentPage = page ?? 1;
-            var size = pageSize ?? 10;
-            if (currentPage < 1) currentPage = 1;
-            if (size < 1) size = 10;
-            if (size > 100) size = 100;
+            var currentPage = page < 1 ? 1 : page;
+            var size = pageSize < 1 ? 10 : pageSize > 100 ? 100 : pageSize;
 
             // ✅ AsNoTracking: ไม่ track entity (ลด memory + เร็วขึ้น)
             IQueryable<WorkOrder> query = db.WorkOrders.AsNoTracking();
@@ -36,7 +33,8 @@ public static class WorkOrderEndpoints
                     w.Order.Contains(term) ||
                     w.OrderType.Contains(term) ||
                     w.Plant.Contains(term) ||
-                    w.Material.Contains(term));
+                    w.Material.Contains(term) ||
+                    (w.DefaultLine != null && w.DefaultLine.Contains(term)));
             }
 
             // ✅ Count (sequential - DbContext ไม่ thread-safe)
