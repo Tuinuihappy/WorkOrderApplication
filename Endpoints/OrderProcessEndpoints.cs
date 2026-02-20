@@ -62,7 +62,45 @@ public static class OrderProcessEndpoints
 
 
 
-            // Get total count after filters
+            // ✅ Calculate Status Counts (From ALL orders - Ignore filters)
+            //    Ensure all key statuses are present with 0 count if missing
+            var allStatuses = new[] 
+            { 
+                "Order Placed", "Preparing", "In Transit", "Awaiting Pickup", 
+                "Delivered", "Returned", "Cancelled" 
+            };
+
+            var dbCounts = await db.OrderProcesses
+                .AsNoTracking()
+                .GroupBy(op => op.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Status ?? "Unknown", x => x.Count);
+            
+            // Merge with 0 for missing statuses
+            var statusCounts = allStatuses.ToDictionary(
+                status => status,
+                status => dbCounts.ContainsKey(status) ? dbCounts[status] : 0
+            );
+
+            // Add any other statuses found in DB (e.g. legacy or other flows)
+            foreach (var kvp in dbCounts)
+            {
+                if (!statusCounts.ContainsKey(kvp.Key))
+                {
+                    statusCounts[kvp.Key] = kvp.Value;
+                }
+            }
+
+            // ✅ Count orders created today (ICT = UTC+7)
+            var ictNow = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7));
+            var todayStart = new DateTimeOffset(ictNow.Date, TimeSpan.FromHours(7)).UtcDateTime;
+            var todayEnd = todayStart.AddDays(1);
+
+            var todayOrderCount = await db.OrderProcesses
+                .AsNoTracking()
+                .CountAsync(op => op.CreatedDate >= todayStart && op.CreatedDate < todayEnd);
+
+            // Get total count after filters (Verified for pagination)
             var totalCount = await query.CountAsync();
 
             // Apply sorting and pagination
@@ -90,7 +128,9 @@ public static class OrderProcessEndpoints
                 Filters = new
                 {
                     Search = search
-                }
+                },
+                StatusCounts = statusCounts, // ✅ Add Status Counts to response
+                TodayOrderCount = todayOrderCount // ✅ จำนวน Order ทั้งหมดของวันนี้
             };
 
             return Results.Ok(response);

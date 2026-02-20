@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using FluentValidation;
-using FluentValidation.Results;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
@@ -17,22 +15,73 @@ public static class ShipmentProcessEndpoints
 {
     public static RouteGroupBuilder MapShipmentProcessEndpoints(this RouteGroupBuilder group)
     {
+        // -------------------- GET /api/orderprocesses/{orderProcessId}/shipmentprocess --------------------
+        group.MapGet("/", async (int orderProcessId, AppDbContext db) =>
+        {
+            var items = await db.ShipmentProcesses
+                .AsNoTracking()
+                .Include(s => s.OrderProcess)
+                .Where(s => s.OrderProcessId == orderProcessId)
+                .OrderByDescending(s => s.Id)
+                .ToListAsync();
+            return Results.Ok(items.Select(s => s.ToListDto()));
+        })
+        .WithName("GetShipmentProcessesByOrderProcess")
+        .WithSummary("Get ShipmentProcesses by OrderProcessId")
+        .WithDescription("ดึงข้อมูล ShipmentProcess ทั้งหมดของ OrderProcess ที่ระบุ")
+        .Produces<IEnumerable<ShipmentProcessListDto>>(StatusCodes.Status200OK);
 
-        // -------------------- POST: /api/proxy/shipmentProcess ----------------------------------------
-        group.MapPost("/shipmentProcess", async (
+        // -------------------- GET /api/orderprocesses/{orderProcessId}/shipmentprocess/{id} --------------------
+        group.MapGet("/{id:int}", async (int orderProcessId, int id, AppDbContext db) =>
+        {
+            var entity = await db.ShipmentProcesses
+                .AsNoTracking()
+                .Include(s => s.OrderProcess)
+                .FirstOrDefaultAsync(s => s.Id == id && s.OrderProcessId == orderProcessId);
+
+            if (entity is null)
+                return Results.NotFound(new { error = $"ShipmentProcess with Id {id} not found." });
+
+            return Results.Ok(entity.ToDetailsDto());
+        })
+        .WithName("GetShipmentProcessByOrderProcess")
+        .WithSummary("Get ShipmentProcess by Id under OrderProcess")
+        .WithDescription("ดึงข้อมูล ShipmentProcess ตาม Id ภายใต้ OrderProcess ที่ระบุ")
+        .Produces<ShipmentProcessDetailsDto>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound);
+
+        // -------------------- POST /api/orderprocesses/{orderProcessId}/shipmentprocess --------------------
+        group.MapPost("/", async (
+            int orderProcessId,
             LocationRequestDto dto,
             AppDbContext db,
             OrderProxyService service,
             IHubContext<ShipmentProcessHub> trackedHub,
+            OrderProcessNotifier notifier,
             ILoggerFactory loggerFactory) =>
         {
             var _logger = loggerFactory.CreateLogger("ShipmentProcess");
+
+            // ✅ ตรวจสอบว่า OrderProcess มีอยู่จริง
+            var orderProcess = await db.OrderProcesses
+                .Include(op => op.CreatedBy)
+                .Include(op => op.WorkOrder)
+                .Include(op => op.ConfirmProcess)
+                .Include(op => op.PreparingProcess)
+                .Include(op => op.ShipmentProcess)
+                .Include(op => op.ReceiveProcess)
+                .Include(op => op.CancelledProcess)
+                .Include(op => op.ReturnProcess)
+                .FirstOrDefaultAsync(op => op.Id == orderProcessId);
+
+            if (orderProcess is null)
+                return Results.NotFound(new { error = $"OrderProcess {orderProcessId} not found." });
 
             // 🔀 แยก Logic ตาม ShipmentMode
             if (dto.Mode == ShipmentMode.Manual)
             {
                 // 🔹 Manual Mode: ไม่ต้องเช็ค OrderGroupAMR และไม่เรียก External API
-                _logger.LogInformation("[Manual Mode] Creating shipment without checking OrderGroupAMR or calling External API");
+                _logger.LogInformation("[Manual Mode] Creating shipment for OrderProcessId={OrderProcessId}", orderProcessId);
 
                 // 👤 ถ้ามี UserId ให้ดึงชื่อคนส่งมาใส่ใน ExecuteVehicleName
                 string? executeVehicleName = null;
@@ -53,56 +102,51 @@ public static class ShipmentProcessEndpoints
                 var shipment = new ShipmentProcess
                 {
                     ShipmentMode = ShipmentMode.Manual,
-                    // กรณี Manual ให้เป็น 0 ไปเลย เพราะไม่จำเป็นต้อง map กับ OrderGroupAMR
-                    SourceStationId = 0, 
+                    SourceStationId = 0,
                     DestinationStationId = 0,
                     OrderGroupId = 0,
-                    
-                    // รับค่าจาก UI โดยตรง
                     SourceStation = dto.SourceStation,
                     DestinationStation = dto.DestinationStation,
-                    
-                    OrderProcessId = dto.OrderProcessId,
+                    OrderProcessId = orderProcessId, // ✅ ใช้จาก URL แทน DTO
                     LastSynced = DateTime.UtcNow,
-                    ExecuteVehicleName = executeVehicleName, 
+                    ExecuteVehicleName = executeVehicleName,
                 };
 
                 db.ShipmentProcesses.Add(shipment);
+
+                // ✅ อัปเดตสถานะ OrderProcess เป็น "In Transit"
+                orderProcess.Status = "In Transit";
+
                 await db.SaveChangesAsync();
 
-                // 📡 Broadcast SignalR event
-                await trackedHub.Clients.All.SendAsync("ShipmentProcessAdded", new
-                {
-                    shipment.Id,
-                    shipment.ShipmentMode,
-                    shipment.SourceStation,
-                    shipment.SourceStationId,
-                    shipment.DestinationStation,
-                    shipment.DestinationStationId,
-                    shipment.OrderGroupId,
-                    shipment.OrderProcessId,
-                    shipment.LastSynced,
-                    shipment.ExecuteVehicleName,
-                    Mode = "Manual"
-                });
+                // ✅ โหลด OrderProcess ใหม่พร้อม navigation properties ครบ
+                var updated = await db.OrderProcesses
+                    .Include(op => op.CreatedBy)
+                    .Include(op => op.WorkOrder)
+                    .Include(op => op.ConfirmProcess)
+                    .Include(op => op.PreparingProcess)
+                    .Include(op => op.ShipmentProcess)
+                    .Include(op => op.ReceiveProcess)
+                    .Include(op => op.CancelledProcess)
+                    .Include(op => op.ReturnProcess)
+                    .FirstAsync(op => op.Id == orderProcessId);
 
-                _logger.LogInformation("[SignalR ▶️] Broadcasted ShipmentProcessAdded (Manual) for Id={Id}", shipment.Id);
+                // ✅ Broadcast OrderProcess (แม่) ผ่าน OrderProcessHub
+                var orderDto = updated.ToDetailsDto();
+                await notifier.BroadcastUpdatedAsync(updated.Id, orderDto);
 
-                return Results.Ok(new
-                {
-                    id = shipment.Id,
-                    mode = "Manual",
-                    sourceStation = shipment.SourceStation,
-                    destinationStation = shipment.DestinationStation,
-                    orderProcessId = shipment.OrderProcessId,
-                    message = "Manual shipment created successfully"
-                });
+                // ✅ Broadcast ShipmentProcess (ลูก) ผ่าน ShipmentProcessHub
+                await notifier.BroadcastShipmentCreatedAsync(updated.OrderNumber, shipment.ToDto());
+
+                _logger.LogInformation("[Manual ✅] ShipmentProcess created for OrderProcessId={OrderProcessId}, Status → In Transit", orderProcessId);
+
+                return Results.Created(
+                    $"/api/orderprocesses/{orderProcessId}/shipmentprocess/{shipment.Id}",
+                    shipment.ToDetailsDto());
             }
             else
             {
                 // 🔹 External API Mode: ต้องเช็ค OrderGroupAMR และเรียก AMR API
-                
-                // ✅ หา mapping จากตาราง OrderGroupAMR (ย้ายมาทำใน else block)
                 var mapping = await db.OrderGroupAMRs
                     .FirstOrDefaultAsync(x =>
                         x.SourceStation == dto.SourceStation &&
@@ -116,7 +160,7 @@ public static class ShipmentProcessEndpoints
                     });
                 }
 
-                _logger.LogInformation("[External API Mode] Calling External API for AMR");
+                _logger.LogInformation("[External API Mode] Calling External API for AMR, OrderProcessId={OrderProcessId}", orderProcessId);
 
                 var orderGroupDto = new OrderGroupRequestDto(mapping.OrderGroupId);
                 var result = await service.AddOrderGroupAsync(orderGroupDto);
@@ -124,7 +168,6 @@ public static class ShipmentProcessEndpoints
                 using var jsonDoc = JsonDocument.Parse(result);
                 var root = jsonDoc.RootElement.GetProperty("result");
 
-                // ✅ ดึงข้อมูลจาก response
                 var externalId = root.GetProperty("id").GetInt32();
                 var orderId = root.GetProperty("orderId").GetString();
                 var orderName = root.GetProperty("orderName").GetString();
@@ -138,13 +181,11 @@ public static class ShipmentProcessEndpoints
                 if (root.TryGetProperty("executeVehicleKey", out var keyProp))
                     executeVehicleKey = keyProp.GetString();
 
-                // ✅ ตรวจสอบว่ามี ShipmentProcess อยู่แล้วหรือไม่ (ตาม ExternalId)
                 var existing = await db.ShipmentProcesses
                     .FirstOrDefaultAsync(x => x.ExternalId == externalId);
 
                 if (existing is null)
                 {
-                    // ➕ เพิ่ม ShipmentProcess ใหม่
                     var shipment = new ShipmentProcess
                     {
                         ShipmentMode = ShipmentMode.ExternalApi,
@@ -159,33 +200,37 @@ public static class ShipmentProcessEndpoints
                         ExecuteVehicleName = executeVehicleName ?? "",
                         ExecuteVehicleKey = executeVehicleKey ?? "",
                         LastSynced = DateTime.UtcNow,
-                        OrderProcessId = dto.OrderProcessId
+                        OrderProcessId = orderProcessId // ✅ ใช้จาก URL แทน DTO
                     };
 
                     db.ShipmentProcesses.Add(shipment);
+
+                    // ✅ อัปเดตสถานะ OrderProcess เป็น "In Transit"
+                    orderProcess.Status = "In Transit";
+
                     await db.SaveChangesAsync();
 
-                    // 📡 แจ้ง SignalR event
-                    await trackedHub.Clients.All.SendAsync("ShipmentProcessAdded", new
-                    {
-                        shipment.Id,
-                        shipment.ShipmentMode,
-                        shipment.ExternalId,
-                        shipment.OrderId,
-                        shipment.OrderName,
-                        shipment.SourceStation,
-                        shipment.SourceStationId,
-                        shipment.DestinationStation,
-                        shipment.DestinationStationId,
-                        shipment.OrderGroupId,
-                        shipment.ExecuteVehicleName,
-                        shipment.ExecuteVehicleKey,
-                        shipment.LastSynced,
-                        Mode = "AMR"
-                    });
+                    // ✅ โหลด OrderProcess ใหม่
+                    var updated = await db.OrderProcesses
+                        .Include(op => op.CreatedBy)
+                        .Include(op => op.WorkOrder)
+                        .Include(op => op.ConfirmProcess)
+                        .Include(op => op.PreparingProcess)
+                        .Include(op => op.ShipmentProcess)
+                        .Include(op => op.ReceiveProcess)
+                        .Include(op => op.CancelledProcess)
+                        .Include(op => op.ReturnProcess)
+                        .FirstAsync(op => op.Id == orderProcessId);
 
-                    _logger.LogInformation("[SignalR ▶️] Broadcasted ShipmentProcessAdded (External API) for {OrderName} ({ExternalId})",
-                        shipment.OrderName, shipment.ExternalId);
+                    // ✅ Broadcast OrderProcess (แม่)
+                    var orderDto = updated.ToDetailsDto();
+                    await notifier.BroadcastUpdatedAsync(updated.Id, orderDto);
+
+                    // ✅ Broadcast ShipmentProcess (ลูก)
+                    await notifier.BroadcastShipmentCreatedAsync(updated.OrderNumber, shipment.ToDto());
+
+                    _logger.LogInformation("[External API ✅] ShipmentProcess created for OrderProcessId={OrderProcessId}, Status → In Transit",
+                        orderProcessId);
                 }
                 else
                 {
@@ -204,21 +249,27 @@ public static class ShipmentProcessEndpoints
                         existing.LastSynced
                     });
 
-                    _logger.LogInformation("[SignalR 🔄] Broadcasted ShipmentProcessUpdated for {OrderName} ({ExternalId})",
+                    _logger.LogInformation("[SignalR 🔄] ShipmentProcessUpdated for {OrderName} ({ExternalId})",
                         existing.OrderName, existing.ExternalId);
                 }
 
-                // ✅ ส่งต่อ response ดิบกลับไปให้ client
                 return Results.Json(JsonSerializer.Deserialize<object>(result));
             }
-        });
-        
-        // -------------------- PATCH /api/shipmentprocesses/{id}/arrived --------------------
+        })
+        .WithName("CreateShipmentProcess")
+        .WithSummary("Create ShipmentProcess under OrderProcess")
+        .WithDescription("สร้าง ShipmentProcess และอัปเดต OrderProcess.Status = 'In Transit' แล้ว Broadcast ผ่าน SignalR")
+        .Produces<ShipmentProcessDetailsDto>(StatusCodes.Status201Created)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status404NotFound);
+
+        // -------------------- PATCH /api/orderprocesses/{orderProcessId}/shipmentprocess/{id}/arrived --------------------
         group.MapPatch("/{id:int}/arrived", async (
+            int orderProcessId,
             int id,
             AppDbContext db,
             ILoggerFactory loggerFactory,
-            OrderProcessNotifier notifier // ✅ ใช้ Notifier แทน HubContext
+            OrderProcessNotifier notifier
         ) =>
         {
             var _logger = loggerFactory.CreateLogger("ShipmentProcess");
@@ -226,7 +277,7 @@ public static class ShipmentProcessEndpoints
             // 🔍 หา ShipmentProcess พร้อม OrderProcess ที่เกี่ยวข้อง
             var shipment = await db.ShipmentProcesses
                 .Include(s => s.OrderProcess)
-                .FirstOrDefaultAsync(s => s.Id == id);
+                .FirstOrDefaultAsync(s => s.Id == id && s.OrderProcessId == orderProcessId);
 
             if (shipment is null)
                 return Results.NotFound(new { error = $"ShipmentProcess with Id {id} not found." });
@@ -261,8 +312,6 @@ public static class ShipmentProcessEndpoints
         .Produces<ShipmentProcessDto>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status400BadRequest);
-
-
 
         return group;
     }

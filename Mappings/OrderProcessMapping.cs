@@ -42,7 +42,8 @@ public static class OrderProcessMapping
             entity.WorkOrder?.OrderType,                          // ✅ เพิ่ม OrderType
             entity.ShipmentProcess?.SourceStation,               // ✅ เพิ่ม sourceStation
             entity.DestinationStation,                           // ✅ ใช้ DestinationStation จาก OrderProcess
-            entity.ShipmentProcess?.ExecuteVehicleName           // ✅ เพิ่ม executeVehicleName
+            entity.ShipmentProcess?.ExecuteVehicleName,          // ✅ เพิ่ม executeVehicleName
+            entity.WorkOrder?.DefaultLine                        // ✅ เพิ่ม DefaultLine
         );
 
     // -------------------- Dto (Upsert) → Entity --------------------

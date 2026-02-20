@@ -44,5 +44,6 @@ public record OrderProcessListDto(
     string? OrderType,
     string? SourceStation,
     string DestinationStation, // ✅ Required
-    string? ExecuteVehicleName
+    string? ExecuteVehicleName,
+    string? DefaultLine // ✅ เพิ่ม DefaultLine
 );

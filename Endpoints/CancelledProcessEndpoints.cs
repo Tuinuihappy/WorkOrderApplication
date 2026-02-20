@@ -307,7 +307,7 @@ public static class CancelledProcessEndpoints
 
             if (orderProcess is not null)
             {
-                orderProcess.Status = "Pending"; // 🔙 ย้อนกลับสถานะ
+                orderProcess.Status = "Order Placed"; // 🔙 ย้อนกลับสถานะ
                 await db.SaveChangesAsync();
 
                 // ✅ Broadcast Real-time

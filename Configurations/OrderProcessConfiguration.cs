@@ -25,7 +25,7 @@ public class OrderProcessConfiguration : IEntityTypeConfiguration<OrderProcess>
         builder.Property(op => op.Status)
                .IsRequired()
                .HasMaxLength(20)
-               .HasDefaultValue("Pending");
+               .HasDefaultValue("Order Placed");
 
         builder.Property(op => op.CreatedDate)
                .HasDefaultValueSql("CURRENT_TIMESTAMP");

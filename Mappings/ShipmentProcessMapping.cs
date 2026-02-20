@@ -6,6 +6,44 @@ namespace WorkOrderApplication.API.Mappings
 {
     public static class ShipmentProcessMapping
     {
+        // -------------------- Entity → DetailsDto --------------------
+        public static ShipmentProcessDetailsDto ToDetailsDto(this ShipmentProcess entity)
+            => new(
+            Id: entity.Id,
+            ShipmentMode: entity.ShipmentMode.ToString(),
+            SourceStationId: entity.SourceStationId,
+            SourceStation: entity.SourceStation,
+            DestinationStationId: entity.DestinationStationId,
+            DestinationStation: entity.DestinationStation,
+            OrderGroupId: entity.OrderGroupId,
+            ExternalId: entity.ExternalId,
+            OrderId: entity.OrderId,
+            OrderName: entity.OrderName,
+            OrderState: entity.OrderState,
+            ExecutingIndex: entity.ExecutingIndex,
+            Progress: entity.Progress,
+            ExecuteVehicleName: entity.ExecuteVehicleName,
+            ExecuteVehicleKey: entity.ExecuteVehicleKey,
+            LastSynced: entity.LastSynced,
+            ArrivalTime: entity.ArrivalTime.ToICT(),
+            OrderProcessId: entity.OrderProcessId,
+            OrderProcessOrderNumber: entity.OrderProcess?.OrderNumber
+            );
+
+        // -------------------- Entity → ListDto --------------------
+        public static ShipmentProcessListDto ToListDto(this ShipmentProcess entity)
+            => new(
+            Id: entity.Id,
+            ShipmentMode: entity.ShipmentMode.ToString(),
+            SourceStation: entity.SourceStation,
+            DestinationStation: entity.DestinationStation,
+            ExecuteVehicleName: entity.ExecuteVehicleName,
+            ArrivalTime: entity.ArrivalTime.ToICT(),
+            OrderProcessId: entity.OrderProcessId,
+            OrderProcessOrderNumber: entity.OrderProcess?.OrderNumber
+            );
+
+        // -------------------- Entity → Dto (เดิม - ใช้สำหรับ SignalR) --------------------
         public static ShipmentProcessDto ToDto(this ShipmentProcess entity)
             => new(
             Id: entity.Id,
@@ -25,11 +63,11 @@ namespace WorkOrderApplication.API.Mappings
             LastSynced: entity.LastSynced,
             OrderProcessId: entity.OrderProcessId,
             OrderProcessName: entity.OrderProcess?.ToString(),
-            ShipmentMode: entity.ShipmentMode.ToString(), // ✅ Map Enum to String
+            ShipmentMode: entity.ShipmentMode.ToString(),
             ArrivalTime: entity.ArrivalTime.ToICT()
             );
 
-            
+        // -------------------- Dto → Entity --------------------
         public static ShipmentProcess ToEntity(this ShipmentProcessDto dto)
         => new()
         {
@@ -53,8 +91,4 @@ namespace WorkOrderApplication.API.Mappings
         };
 
     }
-
-
-
-    
 }

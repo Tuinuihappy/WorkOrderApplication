@@ -125,12 +125,12 @@ app.UseSwaggerUI(c =>
 app.MapGroup("/api/workorders").WithTags("WorkOrders").MapWorkOrderEndpoints(); // WorkOrders
 app.MapGroup("/api/materials").WithTags("Materials").MapMaterialEndpoints(); // Materials
 app.MapGroup("/api/users").WithTags("Users").MapUserEndpoints(); // Users
-app.MapGroup("/api/orderprocesses/{orderProcessId:int}/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints(); // ConfirmProcesses
+app.MapGroup("/api/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints(); // ConfirmProcesses
 app.MapGroup("/api/orderprocesses").WithTags("OrderProcesses").MapOrderProcessEndpoints(); // OrderProcesses
 app.MapGroup("/api/ordermaterials").WithTags("OrderMaterials").MapOrderMaterialEndpoints(); // OrderMaterials
 app.MapGroup("/api/preparingprocesses").WithTags("PreparingProcesses").MapPreparingProcessEndpoints(); // PreparingProcesses
 app.MapGroup("/api/preparingmaterials").WithTags("PreparingMaterials").MapPreparingMaterialEndpoints(); // PreparingMaterials
-app.MapGroup("/api/shipmentprocesses").WithTags("ShipmentProcesses").MapShipmentProcessEndpoints(); // ShippingProcesses
+app.MapGroup("/api/orderprocesses/{orderProcessId:int}/shipmentprocess").WithTags("ShipmentProcesses").MapShipmentProcessEndpoints(); // ShipmentProcesses (nested)
 app.MapGroup("/api/receivedprocesses").WithTags("ReceivedProcesses").MapReceivedProcessEndpoints(); // ReceivedProcesses
 app.MapGroup("/api/receivedmaterials").WithTags("ReceivedMaterials").MapReceivedMaterialEndpoints(); // ReceivedMaterials
 app.MapGroup("/api/returnprocesses").WithTags("ReturnProcesses").MapReturnProcessEndpoints(); // ReturnProcesses

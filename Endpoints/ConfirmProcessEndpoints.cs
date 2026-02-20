@@ -196,7 +196,7 @@ public static class ConfirmProcessEndpoints
                 return Results.NotFound($"OrderProcess {orderProcessId} not found.");
 
             // ✅ อัปเดตสถานะของ OrderProcess กลับไป Pending
-            orderProcess.Status = "Pending";
+            orderProcess.Status = "Order Placed";
 
             // ✅ ลบ ConfirmProcess ออกจากฐานข้อมูล
             db.ConfirmProcesses.Remove(entity);
