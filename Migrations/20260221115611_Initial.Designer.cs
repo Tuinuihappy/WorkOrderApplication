@@ -9,11 +9,11 @@ using WorkOrderApplication.API.Data;
 
 #nullable disable
 
-namespace WorkOrderApplication.API.Data.Migrations
+namespace WorkOrderApplication.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260212021856_RemoveWorkOrderAuditFields")]
-    partial class RemoveWorkOrderAuditFields
+    [Migration("20260221115611_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -268,6 +268,13 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("DestinationStation")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("");
+
                     b.Property<string>("OrderNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -278,7 +285,7 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Pending");
+                        .HasDefaultValue("Order Placed");
 
                     b.Property<DateTime?>("TimeToUse")
                         .HasColumnType("timestamp with time zone");
@@ -766,13 +773,16 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("BasicFinishDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("BasicFinishDate")
+                        .HasColumnType("date");
 
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("DefaultLine")
+                        .HasColumnType("text");
 
                     b.Property<string>("Material")
                         .IsRequired()
@@ -809,8 +819,16 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedDate");
+
+                    b.HasIndex("Material");
+
                     b.HasIndex("Order")
                         .IsUnique();
+
+                    b.HasIndex("OrderType");
+
+                    b.HasIndex("Plant");
 
                     b.ToTable("WorkOrders", (string)null);
                 });

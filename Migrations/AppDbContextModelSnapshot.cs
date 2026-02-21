@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WorkOrderApplication.API.Data;
 
 #nullable disable
 
-namespace WorkOrderApplication.API.Data.Migrations
+namespace WorkOrderApplication.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251030032913_InitialCreateV07")]
-    partial class InitialCreateV07
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,7 +86,12 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Description")
+                    b.Property<string>("BUn")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("MaterialDescription")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -99,16 +101,20 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                    b.Property<string>("OpAc")
+                        .HasColumnType("text");
 
-                    b.Property<int>("RequestPerHour")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("QtyWthdrn")
+                        .HasColumnType("numeric");
 
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<decimal>("ReqmntQty")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("SLoc")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SortString")
+                        .HasColumnType("text");
 
                     b.Property<int>("WorkOrderId")
                         .HasColumnType("integer");
@@ -259,6 +265,13 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("DestinationStation")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("");
+
                     b.Property<string>("OrderNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -269,7 +282,7 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Pending");
+                        .HasDefaultValue("Order Placed");
 
                     b.Property<DateTime?>("TimeToUse")
                         .HasColumnType("timestamp with time zone");
@@ -281,8 +294,12 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
+                    b.HasIndex("CreatedDate");
+
                     b.HasIndex("OrderNumber")
                         .IsUnique();
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("WorkOrderId");
 
@@ -660,6 +677,9 @@ namespace WorkOrderApplication.API.Data.Migrations
                     b.Property<double?>("Progress")
                         .HasColumnType("double precision");
 
+                    b.Property<int>("ShipmentMode")
+                        .HasColumnType("integer");
+
                     b.Property<string>("SourceStation")
                         .IsRequired()
                         .HasColumnType("text");
@@ -669,8 +689,12 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationStation");
+
                     b.HasIndex("OrderProcessId")
                         .IsUnique();
+
+                    b.HasIndex("SourceStation");
 
                     b.ToTable("ShipmentProcesses", (string)null);
                 });
@@ -746,46 +770,62 @@ namespace WorkOrderApplication.API.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CreatedByUserId")
-                        .HasColumnType("integer");
+                    b.Property<DateOnly?>("BasicFinishDate")
+                        .HasColumnType("date");
 
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LineName")
+                    b.Property<string>("DefaultLine")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Material")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Order")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("ModelName")
+                    b.Property<string>("OrderType")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Plant")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("UpdatedByUserId")
-                        .HasColumnType("integer");
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("PCE");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("WorkOrderNumber")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedByUserId");
+                    b.HasIndex("CreatedDate");
 
-                    b.HasIndex("UpdatedByUserId");
+                    b.HasIndex("Material");
 
-                    b.HasIndex("WorkOrderNumber")
+                    b.HasIndex("Order")
                         .IsUnique();
+
+                    b.HasIndex("OrderType");
+
+                    b.HasIndex("Plant");
 
                     b.ToTable("WorkOrders", (string)null);
                 });
@@ -983,24 +1023,6 @@ namespace WorkOrderApplication.API.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("OrderProcess");
-                });
-
-            modelBuilder.Entity("WorkOrderApplication.API.Entities.WorkOrder", b =>
-                {
-                    b.HasOne("WorkOrderApplication.API.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("WorkOrderApplication.API.Entities.User", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("WorkOrderApplication.API.Entities.Material", b =>

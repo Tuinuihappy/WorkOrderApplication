@@ -4,10 +4,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace WorkOrderApplication.API.Data.Migrations
+namespace WorkOrderApplication.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -82,6 +82,23 @@ namespace WorkOrderApplication.API.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Subscriptions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Endpoint = table.Column<string>(type: "text", nullable: false),
+                    P256dh = table.Column<string>(type: "text", nullable: false),
+                    Auth = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Subscriptions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -103,6 +120,28 @@ namespace WorkOrderApplication.API.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "WorkOrders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Order = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    OrderType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Plant = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Material = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    Unit = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "PCE"),
+                    BasicFinishDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    DefaultLine = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkOrders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderMissions",
                 columns: table => new
                 {
@@ -113,6 +152,7 @@ namespace WorkOrderApplication.API.Data.Migrations
                     ExecutingIndex = table.Column<int>(type: "integer", nullable: false),
                     Type = table.Column<string>(type: "text", nullable: false),
                     ActionName = table.Column<string>(type: "text", nullable: false),
+                    Destination = table.Column<int>(type: "integer", nullable: false),
                     DestinationName = table.Column<string>(type: "text", nullable: false),
                     MapName = table.Column<string>(type: "text", nullable: false),
                     ResultCode = table.Column<int>(type: "integer", nullable: false),
@@ -133,48 +173,19 @@ namespace WorkOrderApplication.API.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "WorkOrders",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    WorkOrderNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    LineName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    ModelName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CreatedByUserId = table.Column<int>(type: "integer", nullable: false),
-                    UpdatedByUserId = table.Column<int>(type: "integer", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkOrders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_WorkOrders_Users_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_WorkOrders_Users_UpdatedByUserId",
-                        column: x => x.UpdatedByUserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Materials",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MaterialNumber = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    Quantity = table.Column<int>(type: "integer", nullable: false),
-                    RequestPerHour = table.Column<int>(type: "integer", nullable: false),
-                    Unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    MaterialDescription = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    ReqmntQty = table.Column<decimal>(type: "numeric", nullable: false),
+                    QtyWthdrn = table.Column<decimal>(type: "numeric", nullable: false),
+                    BUn = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    OpAc = table.Column<string>(type: "text", nullable: true),
+                    SortString = table.Column<string>(type: "text", nullable: true),
+                    SLoc = table.Column<string>(type: "text", nullable: true),
                     WorkOrderId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -197,7 +208,8 @@ namespace WorkOrderApplication.API.Data.Migrations
                     OrderNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     TimeToUse = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "Pending"),
+                    Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "Order Placed"),
+                    DestinationStation = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: ""),
                     WorkOrderId = table.Column<int>(type: "integer", nullable: false),
                     CreatedByUserId = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -284,7 +296,7 @@ namespace WorkOrderApplication.API.Data.Migrations
                         column: x => x.MaterialId,
                         principalTable: "Materials",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_OrderMaterials_OrderProcesses_OrderProcessId",
                         column: x => x.OrderProcessId,
@@ -383,12 +395,16 @@ namespace WorkOrderApplication.API.Data.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ShipmentMode = table.Column<int>(type: "integer", nullable: false),
+                    SourceStationId = table.Column<int>(type: "integer", nullable: false),
                     SourceStation = table.Column<string>(type: "text", nullable: false),
+                    DestinationStationId = table.Column<int>(type: "integer", nullable: false),
                     DestinationStation = table.Column<string>(type: "text", nullable: false),
+                    OrderGroupId = table.Column<int>(type: "integer", nullable: false),
                     ExternalId = table.Column<int>(type: "integer", nullable: false),
                     OrderId = table.Column<string>(type: "text", nullable: false),
                     OrderName = table.Column<string>(type: "text", nullable: false),
-                    ArrivalTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ArrivalTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     OrderState = table.Column<int>(type: "integer", nullable: true),
                     ExecutingIndex = table.Column<int>(type: "integer", nullable: true),
                     Progress = table.Column<double>(type: "double precision", nullable: true),
@@ -426,7 +442,7 @@ namespace WorkOrderApplication.API.Data.Migrations
                         column: x => x.MaterialId,
                         principalTable: "Materials",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_PreparingMaterials_PreparingProcesses_PreparingProcessId",
                         column: x => x.PreparingProcessId,
@@ -517,10 +533,20 @@ namespace WorkOrderApplication.API.Data.Migrations
                 column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderProcesses_CreatedDate",
+                table: "OrderProcesses",
+                column: "CreatedDate");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderProcesses_OrderNumber",
                 table: "OrderProcesses",
                 column: "OrderNumber",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderProcesses_Status",
+                table: "OrderProcesses",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderProcesses_WorkOrderId",
@@ -581,10 +607,20 @@ namespace WorkOrderApplication.API.Data.Migrations
                 column: "ReturnByUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ShipmentProcesses_DestinationStation",
+                table: "ShipmentProcesses",
+                column: "DestinationStation");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ShipmentProcesses_OrderProcessId",
                 table: "ShipmentProcesses",
                 column: "OrderProcessId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ShipmentProcesses_SourceStation",
+                table: "ShipmentProcesses",
+                column: "SourceStation");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
@@ -599,20 +635,30 @@ namespace WorkOrderApplication.API.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkOrders_CreatedByUserId",
+                name: "IX_WorkOrders_CreatedDate",
                 table: "WorkOrders",
-                column: "CreatedByUserId");
+                column: "CreatedDate");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkOrders_UpdatedByUserId",
+                name: "IX_WorkOrders_Material",
                 table: "WorkOrders",
-                column: "UpdatedByUserId");
+                column: "Material");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkOrders_WorkOrderNumber",
+                name: "IX_WorkOrders_Order",
                 table: "WorkOrders",
-                column: "WorkOrderNumber",
+                column: "Order",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkOrders_OrderType",
+                table: "WorkOrders",
+                column: "OrderType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkOrders_Plant",
+                table: "WorkOrders",
+                column: "Plant");
         }
 
         /// <inheritdoc />
@@ -649,6 +695,9 @@ namespace WorkOrderApplication.API.Data.Migrations
                 name: "ShipmentProcesses");
 
             migrationBuilder.DropTable(
+                name: "Subscriptions");
+
+            migrationBuilder.DropTable(
                 name: "OrderRecordByIds");
 
             migrationBuilder.DropTable(
@@ -664,10 +713,10 @@ namespace WorkOrderApplication.API.Data.Migrations
                 name: "OrderProcesses");
 
             migrationBuilder.DropTable(
-                name: "WorkOrders");
+                name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "WorkOrders");
         }
     }
 }

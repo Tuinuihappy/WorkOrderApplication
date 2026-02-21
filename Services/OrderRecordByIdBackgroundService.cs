@@ -618,7 +618,7 @@ public class OrderRecordByIdBackgroundService : BackgroundService
                         var orderProcess = await db.OrderProcesses
                             .FirstOrDefaultAsync(op => op.Id == shipmentProcess.OrderProcessId, token);
 
-                        if (orderProcess != null && orderProcess.Status == "Shipment")
+                        if (orderProcess != null && orderProcess.Status == "In Transit")
                         {
                             orderProcess.Status = "Awaiting Pickup";
                             
