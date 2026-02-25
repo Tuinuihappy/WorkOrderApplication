@@ -140,6 +140,7 @@ public static class OrderProcessEndpoints
         group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
         {
             var orderProcess = await db.OrderProcesses.AsNoTracking()
+                .AsSplitQuery()
                 .Include(op => op.CreatedBy)
                 .Include(op => op.WorkOrder)
                 .Include(op => op.WorkOrder)
