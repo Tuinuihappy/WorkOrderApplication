@@ -338,6 +338,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using WorkOrderApplication.API.Constants;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
@@ -350,7 +351,7 @@ namespace WorkOrderApplication.API.Services;
 public class OrderRecordByIdBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IHubContext<OrderRecordHub> _hubContext;
+    private readonly IHubContext<OrderProcessHub, IOrderClient> _hubContext;
     private readonly ILogger<OrderRecordByIdBackgroundService> _logger;
 
     private readonly ConcurrentDictionary<int, OrderSnapshot> _cache = new();
@@ -359,7 +360,7 @@ public class OrderRecordByIdBackgroundService : BackgroundService
 
     public OrderRecordByIdBackgroundService(
         IServiceScopeFactory scopeFactory,
-        IHubContext<OrderRecordHub> hubContext,
+        IHubContext<OrderProcessHub, IOrderClient> hubContext,
         ILogger<OrderRecordByIdBackgroundService> logger)
     {
         _scopeFactory = scopeFactory;
@@ -600,13 +601,16 @@ public class OrderRecordByIdBackgroundService : BackgroundService
                     .OrderBy(m => m.ExecutingIndex)
                     .ToListAsync(token);
 
-                await _hubContext.Clients.Group($"order-{orderRecord.Id}")
-                    .SendAsync("OrderMissionsUpdated", syncedMissions, token);
-
-                // 📦 STEP 5.1: ตรวจสอบ Mission สำเร็จปลายทาง → อัปเดต OrderProcess.Status
                 var shipmentProcess = await db.ShipmentProcesses
                     .FirstOrDefaultAsync(s => s.ExternalId == changed.Id, token);
 
+                if (shipmentProcess != null)
+                {
+                    await _hubContext.Clients.Group(SignalRGroups.OrderDetails(shipmentProcess.OrderProcessId))
+                        .OrderMissionsUpdated(syncedMissions);
+                }
+
+                // 📦 STEP 5.1: ตรวจสอบ Mission สำเร็จปลายทาง → อัปเดต OrderProcess.Status
                 if (shipmentProcess != null)
                 {
                     var matchedMission = syncedMissions.FirstOrDefault(m =>

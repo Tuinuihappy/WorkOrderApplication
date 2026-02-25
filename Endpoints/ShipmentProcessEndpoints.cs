@@ -56,7 +56,6 @@ public static class ShipmentProcessEndpoints
             LocationRequestDto dto,
             AppDbContext db,
             OrderProxyService service,
-            IHubContext<ShipmentProcessHub> trackedHub,
             OrderProcessNotifier notifier,
             ILoggerFactory loggerFactory) =>
         {
@@ -135,8 +134,8 @@ public static class ShipmentProcessEndpoints
                 var orderDto = updated.ToDetailsDto();
                 await notifier.BroadcastUpdatedAsync(updated.Id, orderDto);
 
-                // ✅ Broadcast ShipmentProcess (ลูก) ผ่าน ShipmentProcessHub
-                await notifier.BroadcastShipmentCreatedAsync(updated.OrderNumber, shipment.ToDto());
+                // ✅ Broadcast ShipmentProcess (ลูก) ผ่าน SignalR (Notifier)
+                await notifier.BroadcastShipmentCreatedAsync(updated.Id, shipment.ToDto());
 
                 _logger.LogInformation("[Manual ✅] ShipmentProcess created for OrderProcessId={OrderProcessId}, Status → In Transit", orderProcessId);
 
@@ -227,7 +226,7 @@ public static class ShipmentProcessEndpoints
                     await notifier.BroadcastUpdatedAsync(updated.Id, orderDto);
 
                     // ✅ Broadcast ShipmentProcess (ลูก)
-                    await notifier.BroadcastShipmentCreatedAsync(updated.OrderNumber, shipment.ToDto());
+                    await notifier.BroadcastShipmentCreatedAsync(updated.Id, shipment.ToDto());
 
                     _logger.LogInformation("[External API ✅] ShipmentProcess created for OrderProcessId={OrderProcessId}, Status → In Transit",
                         orderProcessId);
@@ -241,13 +240,8 @@ public static class ShipmentProcessEndpoints
 
                     await db.SaveChangesAsync();
 
-                    await trackedHub.Clients.All.SendAsync("ShipmentProcessUpdated", new
-                    {
-                        existing.ExternalId,
-                        existing.ExecuteVehicleName,
-                        existing.ExecuteVehicleKey,
-                        existing.LastSynced
-                    });
+                    // ✅ Broadcast ShipmentProcess Updated ผ่าน SignalR (Notifier)
+                    await notifier.BroadcastShipmentUpdatedAsync(existing.OrderProcessId, existing.ToDto());
 
                     _logger.LogInformation("[SignalR 🔄] ShipmentProcessUpdated for {OrderName} ({ExternalId})",
                         existing.OrderName, existing.ExternalId);
@@ -299,7 +293,7 @@ public static class ShipmentProcessEndpoints
                 .FirstAsync(s => s.Id == id);
 
             // ✅ Broadcast ผ่าน SignalR (Notifier)
-            await notifier.BroadcastShipmentArrivedAsync(updated.OrderProcess.OrderNumber, updated.ToDto());
+            await notifier.BroadcastShipmentArrivedAsync(updated.OrderProcessId, updated.ToDto());
 
             _logger.LogInformation("[Shipment ✅] ShipmentProcess {Id} marked as Arrived (OrderProcessId={OrderProcessId})",
                 shipment.Id, shipment.OrderProcess.Id);

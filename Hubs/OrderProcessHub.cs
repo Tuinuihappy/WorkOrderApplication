@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.SignalR;
 
 namespace WorkOrderApplication.API.Hubs;
+using WorkOrderApplication.API.Constants;
 
-public class OrderProcessHub : Hub
+public class OrderProcessHub : Hub<IOrderClient>
 {
     private static int _connectedClients = 0;
     private readonly ILogger<OrderProcessHub> _logger;
@@ -33,20 +34,26 @@ public class OrderProcessHub : Hub
     // ✅ สำหรับหน้า List ทั้งหมด
     public async Task JoinOrderList()
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, "orders-all");
-        _logger.LogInformation("👥 Client {ConnectionId} joined group 'orders-all'", Context.ConnectionId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, SignalRGroups.AllOrders);
+        _logger.LogInformation("👥 Client {ConnectionId} joined group '{Group}'", Context.ConnectionId, SignalRGroups.AllOrders);
+    }
+
+    public async Task LeaveOrderList()
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, SignalRGroups.AllOrders);
+        _logger.LogInformation("🚪 Client {ConnectionId} left group '{Group}'", Context.ConnectionId, SignalRGroups.AllOrders);
     }
 
     // ✅ สำหรับหน้า Details ของแต่ละ order
     public async Task JoinOrderDetails(int orderProcessId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"order-{orderProcessId}");
-        _logger.LogInformation("🔍 Client {ConnectionId} joined group 'order-{Id}'", Context.ConnectionId, orderProcessId);
+        await Groups.AddToGroupAsync(Context.ConnectionId, SignalRGroups.OrderDetails(orderProcessId));
+        _logger.LogInformation("🔍 Client {ConnectionId} joined group '{Group}'", Context.ConnectionId, SignalRGroups.OrderDetails(orderProcessId));
     }
 
     public async Task LeaveOrderDetails(int orderProcessId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"order-{orderProcessId}");
-        _logger.LogInformation("🚪 Client {ConnectionId} left group 'order-{Id}'", Context.ConnectionId, orderProcessId);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, SignalRGroups.OrderDetails(orderProcessId));
+        _logger.LogInformation("🚪 Client {ConnectionId} left group '{Group}'", Context.ConnectionId, SignalRGroups.OrderDetails(orderProcessId));
     }
 }

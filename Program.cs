@@ -147,8 +147,6 @@ app.MapGroup("/api/mes").WithTags("MES").MapMesEndpoints(); // MES Endpoints
 
 
 
-app.MapHub<OrderRecordHub>("/hubs/orderRecord"); // OrderRecord Hub
-app.MapHub<ShipmentProcessHub>("/hubs/shipmentProcess"); // ShipmentProcess Hub
 app.MapHub<OrderProcessHub>("/hubs/orderProcess"); // OrderProcess Hub
 
 // ------------------------------- Migration Database ------------------------------------

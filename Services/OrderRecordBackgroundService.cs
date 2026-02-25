@@ -1,20 +1,20 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
 using System.Text.Json;
+using WorkOrderApplication.API.Constants;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
 using WorkOrderApplication.API.Enums;
 using WorkOrderApplication.API.Hubs;
 using WorkOrderApplication.API.Mappings;
-
+using System.Collections.Concurrent;
 namespace WorkOrderApplication.API.Services;
 
 public class OrderRecordBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IHubContext<OrderRecordHub> _hubContext;
+    private readonly IHubContext<OrderProcessHub, IOrderClient> _hubContext;
     private readonly ILogger<OrderRecordBackgroundService> _logger;
 
     private readonly ConcurrentDictionary<int, OrderSnapshot> _cache = new();
@@ -23,7 +23,7 @@ public class OrderRecordBackgroundService : BackgroundService
 
     public OrderRecordBackgroundService(
         IServiceScopeFactory scopeFactory,
-        IHubContext<OrderRecordHub> hubContext,
+        IHubContext<OrderProcessHub, IOrderClient> hubContext,
         ILogger<OrderRecordBackgroundService> logger)
     {
         _scopeFactory = scopeFactory;
@@ -207,10 +207,9 @@ public class OrderRecordBackgroundService : BackgroundService
             _logger.LogInformation("[{Mode}] ✅ Step 4 done | SaveChangesAsync: {Elapsed} ms",
                 mode, sw.ElapsedMilliseconds);
 
-            // 📡 STEP 6: Broadcast updates
             if (changedOrders.Any())
             {
-                await _hubContext.Clients.All.SendAsync("OrderRecordUpdated", changedOrders, cancellationToken: token);
+                await _hubContext.Clients.Group(SignalRGroups.AllOrders).OrderRecordUpdated(changedOrders);
                 _logger.LogInformation("[{Mode}] 📡 Broadcasted updates ({Count})", mode, changedOrders.Count);
             }
 
