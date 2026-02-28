@@ -17,8 +17,16 @@ public static class OrderProcessEndpoints
             AppDbContext db,
             int page = 1,
             int pageSize = 10,
-            string? search = null // ✅ Change to string for global search
-
+            string? search = null, // ✅ Global search
+            string? orderNumber = null,
+            string? status = null,
+            string? destinationStation = null,
+            string? sourceStation = null,
+            string? workOrder = null,
+            string? defaultLine = null,
+            string? executeVehicleName = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null
         ) =>
         {
             // Validate pagination parameters
@@ -49,17 +57,57 @@ public static class OrderProcessEndpoints
                     (searchId.HasValue && op.Id == searchId.Value) || // ✅ Add ID check
                     op.OrderNumber.ToLower().Contains(lowerSearch) ||
                     op.Status.ToLower().Contains(lowerSearch) ||
+                    (op.DestinationStation != null && op.DestinationStation.ToLower().Contains(lowerSearch)) || // ✅ Add OrderProcess DestinationStation
                     op.WorkOrder.Order.ToLower().Contains(lowerSearch) ||
                     op.CreatedBy.UserName.ToLower().Contains(lowerSearch) ||
                     (op.WorkOrder.OrderType != null && op.WorkOrder.OrderType.ToLower().Contains(lowerSearch)) ||
+                    (op.WorkOrder.DefaultLine != null && op.WorkOrder.DefaultLine.ToLower().Contains(lowerSearch)) || // ✅ Add DefaultLine check
                     (op.ShipmentProcess != null && op.ShipmentProcess.SourceStation != null && op.ShipmentProcess.SourceStation.ToLower().Contains(lowerSearch)) ||
                     (op.ShipmentProcess != null && op.ShipmentProcess.DestinationStation != null && op.ShipmentProcess.DestinationStation.ToLower().Contains(lowerSearch)) ||
                     (op.ShipmentProcess != null && op.ShipmentProcess.ExecuteVehicleName != null && op.ShipmentProcess.ExecuteVehicleName.ToLower().Contains(lowerSearch))
                 );
             }
 
+            // ✅ Apply Specific Field Searches
+            if (!string.IsNullOrWhiteSpace(orderNumber))
+                query = query.Where(op => op.OrderNumber.ToLower().Contains(orderNumber.ToLower()));
 
+            if (!string.IsNullOrWhiteSpace(status))
+                query = query.Where(op => op.Status.ToLower().Contains(status.ToLower()));
 
+            if (!string.IsNullOrWhiteSpace(destinationStation))
+                query = query.Where(op => 
+                    (op.DestinationStation != null && op.DestinationStation.ToLower().Contains(destinationStation.ToLower())) ||
+                    (op.ShipmentProcess != null && op.ShipmentProcess.DestinationStation != null && op.ShipmentProcess.DestinationStation.ToLower().Contains(destinationStation.ToLower()))
+                );
+
+            if (!string.IsNullOrWhiteSpace(sourceStation))
+                query = query.Where(op => 
+                    op.ShipmentProcess != null && op.ShipmentProcess.SourceStation != null && op.ShipmentProcess.SourceStation.ToLower().Contains(sourceStation.ToLower())
+                );
+
+            if (!string.IsNullOrWhiteSpace(workOrder))
+                query = query.Where(op => op.WorkOrder.Order.ToLower().Contains(workOrder.ToLower()));
+
+            if (!string.IsNullOrWhiteSpace(defaultLine))
+                query = query.Where(op => op.WorkOrder.DefaultLine != null && op.WorkOrder.DefaultLine.ToLower().Contains(defaultLine.ToLower()));
+
+            if (!string.IsNullOrWhiteSpace(executeVehicleName))
+                query = query.Where(op => op.ShipmentProcess != null && op.ShipmentProcess.ExecuteVehicleName != null && op.ShipmentProcess.ExecuteVehicleName.ToLower().Contains(executeVehicleName.ToLower()));
+
+            if (startDate.HasValue)
+            {
+                // แปลงเวลาให้เป็น UTC ตามโซนเวลาของไทย (+7) เพื่อเปรียบเทียบในฐานข้อมูลได้อย่างถูกต้อง
+                var startUtc = new DateTimeOffset(startDate.Value.Date, TimeSpan.FromHours(7)).UtcDateTime;
+                query = query.Where(op => op.CreatedDate >= startUtc);
+            }
+
+            if (endDate.HasValue)
+            {
+                // ครอบคลุมจนถึงสิ้นวันของ endDate ก่อนที่จะแปลงเป็น UTC
+                var endUtc = new DateTimeOffset(endDate.Value.Date, TimeSpan.FromHours(7)).AddDays(1).UtcDateTime;
+                query = query.Where(op => op.CreatedDate < endUtc);
+            }
 
 
             // ✅ Calculate Status Counts (From ALL orders - Ignore filters)

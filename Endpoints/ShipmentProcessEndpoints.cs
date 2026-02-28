@@ -287,6 +287,21 @@ public static class ShipmentProcessEndpoints
 
             await db.SaveChangesAsync();
 
+            // ✅ โหลด OrderProcess ใหม่พร้อม navigation properties ครบ
+            var updatedOrderProcess = await db.OrderProcesses
+                .Include(op => op.CreatedBy)
+                .Include(op => op.WorkOrder)
+                .Include(op => op.ConfirmProcess)
+                .Include(op => op.PreparingProcess)
+                .Include(op => op.ShipmentProcess)
+                .Include(op => op.ReceiveProcess)
+                .Include(op => op.CancelledProcess)
+                .Include(op => op.ReturnProcess)
+                .FirstAsync(op => op.Id == orderProcessId);
+
+            // ✅ Broadcast OrderProcess (แม่)
+            await notifier.BroadcastUpdatedAsync(updatedOrderProcess.Id, updatedOrderProcess.ToDetailsDto());
+
             // ✅ โหลดข้อมูลใหม่ (รวม OrderProcess)
             var updated = await db.ShipmentProcesses
                 .Include(s => s.OrderProcess)
