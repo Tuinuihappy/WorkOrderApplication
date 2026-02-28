@@ -12,8 +12,10 @@ using WorkOrderApplication.API.Hubs;
 using Serilog;
 using Microsoft.Extensions.Options;
 using WebPush;
-
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args); // Create WebApplication builder
 builder.WebHost.UseUrls("http://0.0.0.0:5034");
@@ -78,6 +80,28 @@ builder.Services.AddHostedService<OrderRecordByIdBackgroundService>(); // Backgr
 builder.Services.AddScoped<OrderProcessNotifier>(); // OrderProcess Notifier Service
 builder.Services.AddHostedService<WorkOrderLineSyncService>(); // Sync DefaultLine for WorkOrders
 
+// --------------------------------- 🔐 Security & Auth Services --------------------------------------
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtOptions>()!;
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 
 // --------------------------------- 🏭 MES Services --------------------------------------------------
 builder.Services.Configure<MesOptions>(
@@ -106,6 +130,30 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("workorders", new() { Title = "WorkOrder API", Version = "v1" });
+
+    // JWT Swagger setup
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
 
 
@@ -121,25 +169,28 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty; // serve the Swagger UI at the app's root
 });
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 // ----------------------------------- 📡 Minimal API ------------------------------------------------------
-app.MapGroup("/api/workorders").WithTags("WorkOrders").MapWorkOrderEndpoints(); // WorkOrders
-app.MapGroup("/api/materials").WithTags("Materials").MapMaterialEndpoints(); // Materials
-app.MapGroup("/api/users").WithTags("Users").MapUserEndpoints(); // Users
-//app.MapGroup("/api/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints(); // ConfirmProcesses
-app.MapGroup("/api/orderprocesses/{orderProcessId:int}/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints();
-app.MapGroup("/api/orderprocesses").WithTags("OrderProcesses").MapOrderProcessEndpoints(); // OrderProcesses
-app.MapGroup("/api/ordermaterials").WithTags("OrderMaterials").MapOrderMaterialEndpoints(); // OrderMaterials
-app.MapGroup("/api/preparingprocesses").WithTags("PreparingProcesses").MapPreparingProcessEndpoints(); // PreparingProcesses
-app.MapGroup("/api/preparingmaterials").WithTags("PreparingMaterials").MapPreparingMaterialEndpoints(); // PreparingMaterials
-app.MapGroup("/api/orderprocesses/{orderProcessId:int}/shipmentprocess").WithTags("ShipmentProcesses").MapShipmentProcessEndpoints(); // ShipmentProcesses (nested)
-app.MapGroup("/api/receivedprocesses").WithTags("ReceivedProcesses").MapReceivedProcessEndpoints(); // ReceivedProcesses
-app.MapGroup("/api/receivedmaterials").WithTags("ReceivedMaterials").MapReceivedMaterialEndpoints(); // ReceivedMaterials
-app.MapGroup("/api/returnprocesses").WithTags("ReturnProcesses").MapReturnProcessEndpoints(); // ReturnProcesses
-app.MapGroup("/api/cancelledprocesses").WithTags("CancelProcesses").MapCancelledProcessEndpoints(); // CancelProcesses
-app.MapGroup("/api/ordergroup").WithTags("OrderGroup").MapOrderProxyEndpoints(); // RIOT OrderGroup
-app.MapGroup("/api/orderGroupAMR").WithTags("OrderGroupAMR").MapOrderGroupAMREndpoints(); // RIOT OrderGroupAMR
-app.MapGroup("/api/vehicleProxy").WithTags("VehicleProxy").MapVehicleProxyEndpoints(); // Vehicle Proxy
-app.MapGroup("/api/mes").WithTags("MES").MapMesEndpoints(); // MES Endpoints
+app.MapGroup("/api/workorders").WithTags("WorkOrders").RequireAuthorization().MapWorkOrderEndpoints(); // WorkOrders
+app.MapGroup("/api/materials").WithTags("Materials").RequireAuthorization().MapMaterialEndpoints(); // Materials
+app.MapGroup("/api/users").WithTags("Users").RequireAuthorization().MapUserEndpoints(); // Users
+app.MapGroup("/api/orderprocesses/{orderProcessId:int}/confirmprocesses").WithTags("ConfirmProcesses").RequireAuthorization().MapConfirmProcessEndpoints();
+app.MapGroup("/api/orderprocesses").WithTags("OrderProcesses").RequireAuthorization().MapOrderProcessEndpoints(); // OrderProcesses
+app.MapGroup("/api/ordermaterials").WithTags("OrderMaterials").RequireAuthorization().MapOrderMaterialEndpoints(); // OrderMaterials
+app.MapGroup("/api/preparingprocesses").WithTags("PreparingProcesses").RequireAuthorization().MapPreparingProcessEndpoints(); // PreparingProcesses
+app.MapGroup("/api/preparingmaterials").WithTags("PreparingMaterials").RequireAuthorization().MapPreparingMaterialEndpoints(); // PreparingMaterials
+app.MapGroup("/api/orderprocesses/{orderProcessId:int}/shipmentprocess").WithTags("ShipmentProcesses").RequireAuthorization().MapShipmentProcessEndpoints(); // ShipmentProcesses (nested)
+app.MapGroup("/api/receivedprocesses").WithTags("ReceivedProcesses").RequireAuthorization().MapReceivedProcessEndpoints(); // ReceivedProcesses
+app.MapGroup("/api/receivedmaterials").WithTags("ReceivedMaterials").RequireAuthorization().MapReceivedMaterialEndpoints(); // ReceivedMaterials
+app.MapGroup("/api/returnprocesses").WithTags("ReturnProcesses").RequireAuthorization().MapReturnProcessEndpoints(); // ReturnProcesses
+app.MapGroup("/api/cancelledprocesses").WithTags("CancelProcesses").RequireAuthorization().MapCancelledProcessEndpoints(); // CancelProcesses
+app.MapGroup("/api/ordergroup").WithTags("OrderGroup").RequireAuthorization().MapOrderProxyEndpoints(); // RIOT OrderGroup
+app.MapGroup("/api/orderGroupAMR").WithTags("OrderGroupAMR").RequireAuthorization().MapOrderGroupAMREndpoints(); // RIOT OrderGroupAMR
+app.MapGroup("/api/vehicleProxy").WithTags("VehicleProxy").RequireAuthorization().MapVehicleProxyEndpoints(); // Vehicle Proxy
+app.MapGroup("/api/mes").WithTags("MES").RequireAuthorization().MapMesEndpoints(); // MES Endpoints
+app.MapGroup("/api/auth").WithTags("Auth").MapAuthEndpoints(); // Auth Endpoints
 
 
 

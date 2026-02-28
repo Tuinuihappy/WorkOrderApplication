@@ -18,6 +18,7 @@ public static class UserMapping
             user.Shift,
             user.ContactNumber,
             user.Email,
+            user.Role,
             user.CreatedDate.ToICT(),
             user.UpdatedDate.ToICT()
         );
@@ -31,7 +32,8 @@ public static class UserMapping
             user.EmployeeId,
             user.Position,
             user.Department,
-            user.Shift
+            user.Shift,
+            user.Role
         );
     }
 
@@ -47,6 +49,8 @@ public static class UserMapping
             Shift = dto.Shift,
             ContactNumber = dto.ContactNumber,
             Email = dto.Email,
+            Role = dto.Role,
+            PasswordHash = "", // จะถูกทับใน Endpoint
             CreatedDate = DateTime.UtcNow,
             UpdatedDate = DateTime.UtcNow
         };
@@ -62,6 +66,8 @@ public static class UserMapping
         user.Shift = dto.Shift;
         user.ContactNumber = dto.ContactNumber;
         user.Email = dto.Email;
+        user.Role = dto.Role;
+        // Password ถูกจัดการใน Endpoint
         user.UpdatedDate = DateTime.UtcNow;
     }
 }

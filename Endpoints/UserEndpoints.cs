@@ -4,6 +4,7 @@ using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Entities;
 using WorkOrderApplication.API.Mappings;
+using WorkOrderApplication.API.Services;
 
 
 namespace WorkOrderApplication.API.Endpoints;
@@ -38,7 +39,7 @@ public static class UserEndpoints
         .Produces(StatusCodes.Status404NotFound);
 
         // -------------------- POST /api/users --------------------
-        group.MapPost("/", async (UserUpsertDto dto, AppDbContext db, IValidator<UserUpsertDto> validator) =>
+        group.MapPost("/", async (UserUpsertDto dto, AppDbContext db, IValidator<UserUpsertDto> validator, IAuthService authService) =>
         {
             var validationResult = await validator.ValidateAsync(dto);
             if (!validationResult.IsValid)
@@ -51,6 +52,11 @@ public static class UserEndpoints
             }
 
             var user = dto.ToEntity();
+            
+            // Hash Password for new user
+            string plainPassword = !string.IsNullOrEmpty(dto.Password) ? dto.Password : "123456";
+            user.PasswordHash = authService.HashPassword(plainPassword);
+            
             db.Users.Add(user);
             await db.SaveChangesAsync();
 
@@ -63,7 +69,7 @@ public static class UserEndpoints
         .Produces(StatusCodes.Status400BadRequest);
 
         // -------------------- PUT /api/users/{id} --------------------
-        group.MapPut("/{id:int}", async (int id, UserUpsertDto dto, AppDbContext db, IValidator<UserUpsertDto> validator) =>
+        group.MapPut("/{id:int}", async (int id, UserUpsertDto dto, AppDbContext db, IValidator<UserUpsertDto> validator, IAuthService authService) =>
         {
             var validationResult = await validator.ValidateAsync(dto);
             if (!validationResult.IsValid)
@@ -79,6 +85,12 @@ public static class UserEndpoints
             if (user is null) return Results.NotFound();
 
             user.UpdateEntity(dto);
+
+            // Update PasswordHash if Password provided
+            if (!string.IsNullOrEmpty(dto.Password))
+            {
+                user.PasswordHash = authService.HashPassword(dto.Password);
+            }
             await db.SaveChangesAsync();
 
             return Results.Ok(user.ToDetailsDto());

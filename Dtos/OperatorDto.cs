@@ -10,6 +10,7 @@ public record UserDetailsDto(
     string Shift,
     string? ContactNumber,
     string Email,
+    string Role,
     DateTime CreatedDate,
     DateTime UpdatedDate
 );
@@ -22,7 +23,9 @@ public record UserUpsertDto(
     string Department,
     string Shift,
     string? ContactNumber,
-    string Email
+    string Email,
+    string? Password, // Optional string สำหรับตอน Update อาจจะไม่เปลี่ยนรหัสผ่าน
+    string Role = "User"
 );
 
 // -------------------- สำหรับ List / Table View --------------------
@@ -32,5 +35,6 @@ public record UserListDto(
     string EmployeeId,
     string Position,
     string Department,
-    string Shift
+    string Shift,
+    string Role
 );

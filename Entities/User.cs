@@ -12,6 +12,11 @@ public class User
     public string Shift { get; set; } = default!;   // Day, Night
     public string? ContactNumber { get; set; } // เบอร์โทรศัพท์
     public string Email { get; set; } = default!; // อีเมล
+    
+    // Auth Fields
+    public string PasswordHash { get; set; } = default!; // รหัสผ่านที่เข้ารหัสแล้ว
+    public string Role { get; set; } = "User"; // สิทธิ์การใช้งาน เช่น Admin, User, Manager
+
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedDate { get; set; } = DateTime.UtcNow;
 }

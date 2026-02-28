@@ -44,5 +44,15 @@ public class UserUpsertDtoValidator : AbstractValidator<UserUpsertDto>
             .NotEmpty().WithMessage("Email is required. / จำเป็นต้องระบุอีเมล")
             .EmailAddress().WithMessage("Email format is invalid. / รูปแบบอีเมลไม่ถูกต้อง")
             .MaximumLength(150).WithMessage("Email must not exceed 150 characters. / อีเมลต้องไม่เกิน 150 ตัวอักษร");
+
+        // -------------------- ✅ Role --------------------
+        RuleFor(x => x.Role)
+            .NotEmpty().WithMessage("Role is required. / จำเป็นต้องระบุสิทธิ์การใช้งาน")
+            .MaximumLength(50).WithMessage("Role must not exceed 50 characters. / สิทธิ์การใช้งานต้องไม่เกิน 50 ตัวอักษร");
+
+        // -------------------- ✅ Password (Optional for Update) --------------------
+        RuleFor(x => x.Password)
+            .MinimumLength(6).When(x => !string.IsNullOrEmpty(x.Password))
+            .WithMessage("Password must be at least 6 characters. / รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
     }
 }

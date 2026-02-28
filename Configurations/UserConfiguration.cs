@@ -54,6 +54,16 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
 
+        // PasswordHash
+        builder.Property(u => u.PasswordHash)
+            .IsRequired();
+
+        // Role
+        builder.Property(u => u.Role)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue("User");
+
         // CreatedDate / UpdatedDate
         builder.Property(u => u.CreatedDate)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
