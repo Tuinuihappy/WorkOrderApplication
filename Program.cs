@@ -173,6 +173,27 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // ----------------------------------- 📡 Minimal API ------------------------------------------------------
+app.MapGroup("/api/workorders").WithTags("WorkOrders").MapWorkOrderEndpoints(); // WorkOrders
+app.MapGroup("/api/materials").WithTags("Materials").MapMaterialEndpoints(); // Materials
+app.MapGroup("/api/users").WithTags("Users").MapUserEndpoints(); // Users
+app.MapGroup("/api/orderprocesses/{orderProcessId:int}/confirmprocesses").WithTags("ConfirmProcesses").MapConfirmProcessEndpoints();
+app.MapGroup("/api/orderprocesses").WithTags("OrderProcesses").MapOrderProcessEndpoints(); // OrderProcesses
+app.MapGroup("/api/ordermaterials").WithTags("OrderMaterials").MapOrderMaterialEndpoints(); // OrderMaterials
+app.MapGroup("/api/preparingprocesses").WithTags("PreparingProcesses").MapPreparingProcessEndpoints(); // PreparingProcesses
+app.MapGroup("/api/preparingmaterials").WithTags("PreparingMaterials").MapPreparingMaterialEndpoints(); // PreparingMaterials
+app.MapGroup("/api/orderprocesses/{orderProcessId:int}/shipmentprocess").WithTags("ShipmentProcesses").MapShipmentProcessEndpoints(); // ShipmentProcesses (nested)
+app.MapGroup("/api/receivedprocesses").WithTags("ReceivedProcesses").MapReceivedProcessEndpoints(); // ReceivedProcesses
+app.MapGroup("/api/receivedmaterials").WithTags("ReceivedMaterials").MapReceivedMaterialEndpoints(); // ReceivedMaterials
+app.MapGroup("/api/returnprocesses").WithTags("ReturnProcesses").MapReturnProcessEndpoints(); // ReturnProcesses
+app.MapGroup("/api/cancelledprocesses").WithTags("CancelProcesses").MapCancelledProcessEndpoints(); // CancelProcesses
+app.MapGroup("/api/ordergroup").WithTags("OrderGroup").MapOrderProxyEndpoints(); // RIOT OrderGroup
+app.MapGroup("/api/orderGroupAMR").WithTags("OrderGroupAMR").MapOrderGroupAMREndpoints(); // RIOT OrderGroupAMR
+app.MapGroup("/api/vehicleProxy").WithTags("VehicleProxy").MapVehicleProxyEndpoints(); // Vehicle Proxy
+app.MapGroup("/api/mes").WithTags("MES").MapMesEndpoints(); // MES Endpoints
+app.MapGroup("/api/auth").WithTags("Auth").MapAuthEndpoints(); // Auth Endpoints
+
+/*
+// ----------------------------------- 📡 Minimal API ------------------------------------------------------
 app.MapGroup("/api/workorders").WithTags("WorkOrders").RequireAuthorization().MapWorkOrderEndpoints(); // WorkOrders
 app.MapGroup("/api/materials").WithTags("Materials").RequireAuthorization().MapMaterialEndpoints(); // Materials
 app.MapGroup("/api/users").WithTags("Users").RequireAuthorization().MapUserEndpoints(); // Users
@@ -191,7 +212,7 @@ app.MapGroup("/api/orderGroupAMR").WithTags("OrderGroupAMR").RequireAuthorizatio
 app.MapGroup("/api/vehicleProxy").WithTags("VehicleProxy").RequireAuthorization().MapVehicleProxyEndpoints(); // Vehicle Proxy
 app.MapGroup("/api/mes").WithTags("MES").RequireAuthorization().MapMesEndpoints(); // MES Endpoints
 app.MapGroup("/api/auth").WithTags("Auth").MapAuthEndpoints(); // Auth Endpoints
-
+*/
 
 
 
