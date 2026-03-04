@@ -6,10 +6,7 @@ public record UserDetailsDto(
     string UserName,
     string EmployeeId,
     string Position,
-    string Department,
     string Shift,
-    string? ContactNumber,
-    string Email,
     string Role,
     DateTime CreatedDate,
     DateTime UpdatedDate
@@ -20,10 +17,7 @@ public record UserUpsertDto(
     string UserName,
     string EmployeeId,
     string Position,
-    string Department,
     string Shift,
-    string? ContactNumber,
-    string Email,
     string? Password, // Optional string สำหรับตอน Update อาจจะไม่เปลี่ยนรหัสผ่าน
     string Role = "User"
 );
@@ -34,7 +28,6 @@ public record UserListDto(
     string UserName,
     string EmployeeId,
     string Position,
-    string Department,
     string Shift,
     string Role
 );

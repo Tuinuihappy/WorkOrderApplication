@@ -33,8 +33,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.EmployeeId),
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim(ClaimTypes.Role, user.Role),
-            new Claim("Position", user.Position ?? string.Empty),
-            new Claim("Department", user.Department ?? string.Empty)
+            new Claim("Position", user.Position ?? string.Empty)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));

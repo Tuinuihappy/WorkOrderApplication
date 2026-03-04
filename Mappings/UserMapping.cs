@@ -14,10 +14,7 @@ public static class UserMapping
             user.UserName,
             user.EmployeeId,
             user.Position,
-            user.Department,
             user.Shift,
-            user.ContactNumber,
-            user.Email,
             user.Role,
             user.CreatedDate.ToICT(),
             user.UpdatedDate.ToICT()
@@ -31,7 +28,6 @@ public static class UserMapping
             user.UserName,
             user.EmployeeId,
             user.Position,
-            user.Department,
             user.Shift,
             user.Role
         );
@@ -45,10 +41,7 @@ public static class UserMapping
             UserName = dto.UserName,
             EmployeeId = dto.EmployeeId,
             Position = dto.Position,
-            Department = dto.Department,
             Shift = dto.Shift,
-            ContactNumber = dto.ContactNumber,
-            Email = dto.Email,
             Role = dto.Role,
             PasswordHash = "", // จะถูกทับใน Endpoint
             CreatedDate = DateTime.UtcNow,
@@ -62,10 +55,7 @@ public static class UserMapping
         user.UserName = dto.UserName;
         user.EmployeeId = dto.EmployeeId;
         user.Position = dto.Position;
-        user.Department = dto.Department;
         user.Shift = dto.Shift;
-        user.ContactNumber = dto.ContactNumber;
-        user.Email = dto.Email;
         user.Role = dto.Role;
         // Password ถูกจัดการใน Endpoint
         user.UpdatedDate = DateTime.UtcNow;

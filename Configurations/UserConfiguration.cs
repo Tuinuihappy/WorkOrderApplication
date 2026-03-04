@@ -32,27 +32,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(50);
 
-        // Department
-        builder.Property(u => u.Department)
-            .IsRequired()
-            .HasMaxLength(100);
-
         // Shift
         builder.Property(u => u.Shift)
             .IsRequired()
             .HasMaxLength(20);
-
-        // ContactNumber (nullable)
-        builder.Property(u => u.ContactNumber)
-            .HasMaxLength(20);
-
-        // Email → Unique
-        builder.Property(u => u.Email)
-            .IsRequired()
-            .HasMaxLength(150);
-
-        builder.HasIndex(u => u.Email)
-            .IsUnique();
 
         // PasswordHash
         builder.Property(u => u.PasswordHash)
