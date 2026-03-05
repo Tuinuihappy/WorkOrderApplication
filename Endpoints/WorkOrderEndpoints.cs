@@ -15,12 +15,11 @@ public static class WorkOrderEndpoints
         // -------------------- GET: /api/workorders (Pagination + Filter) --------------------
         group.MapGet("/", async (
             AppDbContext db,
-            int page = 1,
-            int pageSize = 10,
+            int? page = null,
+            int? pageSize = null, // null = ดึงข้อมูลทั้งหมด
             string? search = null) =>
         {
-            var currentPage = page < 1 ? 1 : page;
-            var size = pageSize < 1 ? 10 : pageSize > 100 ? 100 : pageSize;
+            var currentPage = (page ?? 1) < 1 ? 1 : (page ?? 1);
 
             // ✅ AsNoTracking: ไม่ track entity (ลด memory + เร็วขึ้น)
             IQueryable<WorkOrder> query = db.WorkOrders.AsNoTracking();
@@ -39,13 +38,33 @@ public static class WorkOrderEndpoints
 
             // ✅ Count (sequential - DbContext ไม่ thread-safe)
             var totalCount = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)size);
+            
+            // ตรวจสอบว่าต้องการดึงทั้งหมดหรือไม่ (แต่เพิ่ม Hard Limit ที่ 5000)
+            var getAll = !pageSize.HasValue;
+            var maxLimit = 5000;
+            
+            var size = getAll 
+                ? Math.Min(totalCount, maxLimit) // ถ้า GetAll ดึงเท่าที่มีแต่ไม่เกิน 5000
+                : (pageSize!.Value < 1 ? 10 : pageSize.Value);
+                
+            // ถ้าดึงข้อมูล getAll และไปชน Hard limit (5000) ให้บังคับใช้ Skip/Take เพื่อตัดข้อมูลด้วย
+            if (getAll && totalCount > maxLimit) {
+                getAll = false; 
+            }
+                
+            var totalPages = size == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)size);
 
-            // ✅ Pagination + Inline Projection (ดึงเฉพาะ column ที่ใช้)
+            // เรียงลำดับข้อมูล
+            query = query.OrderByDescending(w => w.CreatedDate);
+
+            // ✅ แบ่งหน้า (Pagination) เฉพาะกรณีที่มีการส่ง pageSize (หรือถ้าดึงเกิน 5000)
+            if (!getAll)
+            {
+                query = query.Skip((currentPage - 1) * size).Take(size);
+            }
+
+            // ✅ Inline Projection (ดึงเฉพาะ column ที่ใช้)
             var workOrders = await query
-                .OrderByDescending(w => w.CreatedDate)
-                .Skip((currentPage - 1) * size)
-                .Take(size)
                 .Select(w => new WorkOrderListDto(
                     w.Id,
                     w.Order,
@@ -64,8 +83,8 @@ public static class WorkOrderEndpoints
             {
                 totalCount,
                 totalPages,
-                currentPage,
-                pageSize = size,
+                currentPage = getAll ? 1 : currentPage,
+                pageSize = getAll ? totalCount : size,
                 data = workOrders
             });
         })

@@ -15,8 +15,8 @@ public static class OrderProcessEndpoints
         // -------------------- GET /api/orderprocesses --------------------
         group.MapGet("/", async (
             AppDbContext db,
-            int page = 1,
-            int pageSize = 10,
+            int? page = null,
+            int? pageSize = null, // null = ดึงข้อมูลทั้งหมด
             string? search = null, // ✅ Global search
             string? orderNumber = null,
             string? status = null,
@@ -29,10 +29,7 @@ public static class OrderProcessEndpoints
             DateTime? endDate = null
         ) =>
         {
-            // Validate pagination parameters
-            if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100; // Max page size limit
+            var currentPage = (page ?? 1) < 1 ? 1 : (page ?? 1);
 
             // Build query with filters
             var query = db.OrderProcesses.AsNoTracking()
@@ -151,27 +148,43 @@ public static class OrderProcessEndpoints
             // Get total count after filters (Verified for pagination)
             var totalCount = await query.CountAsync();
 
+            // ตรวจสอบว่าต้องการดึงทั้งหมดหรือไม่ (แต่เพิ่ม Hard Limit ที่ 1000)
+            var getAll = !pageSize.HasValue;
+            var maxLimit = 1000;
+            
+            var size = getAll 
+                ? Math.Min(totalCount, maxLimit)
+                : (pageSize!.Value < 1 ? 10 : pageSize.Value);
+                
+            // ถ้าดึงข้อมูล getAll และไปชน Hard limit (1000) ให้บังคับใช้ Skip/Take เพื่อตัดข้อมูลด้วย
+            if (getAll && totalCount > maxLimit) {
+                getAll = false; 
+            }
+
             // Apply sorting and pagination
-            var orderProcesses = await query
-                .OrderByDescending(op => op.CreatedDate)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            query = query.OrderByDescending(op => op.CreatedDate);
+
+            if (!getAll)
+            {
+                query = query.Skip((currentPage - 1) * size).Take(size);
+            }
+
+            var orderProcesses = await query.ToListAsync();
 
             // Calculate pagination metadata
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            var totalPages = size == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)size);
 
             var response = new
             {
                 Data = orderProcesses.Select(op => op.ToListDto()),
                 Pagination = new
                 {
-                    CurrentPage = page,
-                    PageSize = pageSize,
+                    CurrentPage = getAll ? 1 : currentPage,
+                    PageSize = getAll ? totalCount : size,
                     TotalCount = totalCount,
                     TotalPages = totalPages,
-                    HasPrevious = page > 1,
-                    HasNext = page < totalPages
+                    HasPrevious = currentPage > 1,
+                    HasNext = currentPage < totalPages
                 },
                 Filters = new
                 {
