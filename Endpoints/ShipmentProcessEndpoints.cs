@@ -76,6 +76,12 @@ public static class ShipmentProcessEndpoints
             if (orderProcess is null)
                 return Results.NotFound(new { error = $"OrderProcess {orderProcessId} not found." });
 
+            // ✅ เช็คก่อนว่า OrderProcess นี้มีการสร้าง ShipmentProcess ไว้แล้วหรือยัง 
+            if (orderProcess.ShipmentProcess != null) 
+            {
+                return Results.Conflict(new { error = $"OrderProcess {orderProcessId} already has an active ShipmentProcess." });
+            }
+
             // 🔀 แยก Logic ตาม ShipmentMode
             if (dto.Mode == ShipmentMode.Manual)
             {

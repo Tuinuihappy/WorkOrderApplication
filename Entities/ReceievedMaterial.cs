@@ -10,5 +10,5 @@ public class ReceivedMaterial
     public int MaterialId { get; set; }
     public Material Material { get; set; } = default!;
     // -----------------------------------------------------------------------------------------------------------
-    public int ReceivedQty { get; set; }
+    public decimal ReceivedQty { get; set; }
 }

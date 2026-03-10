@@ -73,6 +73,13 @@ public static class PreparingProcessEndpoints
                 if (orderProcess is null)
                     return Results.NotFound($"OrderProcess {dto.OrderProcessId} not found.");
 
+                // ✅ เช็คก่อนว่า OrderProcess นี้มีการสร้าง PreparingProcess ไว้แล้วหรือยัง
+                if (orderProcess.PreparingProcess != null)
+                {
+                    await transaction.RollbackAsync();
+                    return Results.Conflict(new { error = $"OrderProcess {dto.OrderProcessId} is already prepared." });
+                }
+
                 // ✅ อัปเดตสถานะ OrderProcess
                 orderProcess.Status = "In Transit"; // หรือ "Ready to Ship" ตาม workflow จริงของคุณ
 

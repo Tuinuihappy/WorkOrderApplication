@@ -7,14 +7,14 @@ public record ReceivedMaterialDetailsDto(
     int MaterialId,
     string MaterialNumber,
     string MaterialDescription,
-    int ReceivedQty,
+    decimal ReceivedQty,
     string BUn
 );
 
 // -------------------- ใช้สำหรับ Insert / Update --------------------
 public record ReceivedMaterialUpsertDto(
     int MaterialId,
-    int ReceivedQty
+    decimal ReceivedQty
 );
 
 // -------------------- สำหรับ List / Table View --------------------
@@ -22,6 +22,6 @@ public record ReceivedMaterialListDto(
     int Id,
     string MaterialNumber,
     string MaterialDescription,
-    int ReceivedQty,
+    decimal ReceivedQty,
     string BUn
 );

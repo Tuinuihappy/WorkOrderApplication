@@ -12,5 +12,5 @@ public class OrderMaterial
     public int MaterialId { get; set; } // Foreign Key
     public Material Material { get; set; } = default!; // Navigation Property
     // -----------------------------------------------------------------------------------------------------------
-    public int OrderQty { get; set; } // จำนวนที่จัดเตรียมจริง
+    public decimal OrderQty { get; set; } // จำนวนที่จัดเตรียมจริง
 }

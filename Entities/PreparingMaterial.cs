@@ -12,5 +12,5 @@ public class PreparingMaterial
     public int MaterialId { get; set; } // Foreign Key
     public Material Material { get; set; } = default!; // Navigation Property
     // -----------------------------------------------------------------------------------------------------------
-    public int PreparedQty { get; set; } // จำนวนที่จัดเตรียมจริง
+    public decimal PreparedQty { get; set; } // จำนวนที่จัดเตรียมจริง
 }

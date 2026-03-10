@@ -7,18 +7,18 @@ public record OrderMaterialDetailsDto(
     int MaterialId,
     string MaterialNumber,
     string MaterialDescription,
-    int OrderQty,
+    decimal OrderQty,
     string BUn
 );
 // -------------------- ใช้สำหรับ Insert / Update --------------------
 public record OrderMaterialUpsertDto(
     int MaterialId,
-    int OrderQty
+    decimal OrderQty
 );
 // -------------------- สำหรับ List / Table View --------------------
 public record OrderMaterialListDto(
     int Id,
     int MaterialId,
     string MaterialNumber,
-    int OrderQty
+    decimal OrderQty
 );

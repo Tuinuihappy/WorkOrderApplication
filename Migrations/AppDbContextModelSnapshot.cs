@@ -178,8 +178,8 @@ namespace WorkOrderApplication.API.Migrations
                     b.Property<int>("OrderProcessId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("OrderQty")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("OrderQty")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -451,8 +451,8 @@ namespace WorkOrderApplication.API.Migrations
                     b.Property<int>("MaterialId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("PreparedQty")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("PreparedQty")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("PreparingProcessId")
                         .HasColumnType("integer");
@@ -543,10 +543,10 @@ namespace WorkOrderApplication.API.Migrations
                     b.Property<int>("ReceivedProcessId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ReceivedQty")
+                    b.Property<decimal>("ReceivedQty")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("numeric")
+                        .HasDefaultValue(0m);
 
                     b.HasKey("Id");
 
@@ -795,8 +795,8 @@ namespace WorkOrderApplication.API.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Unit")
                         .IsRequired()
