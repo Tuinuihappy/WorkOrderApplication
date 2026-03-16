@@ -85,17 +85,6 @@ public static class ReceivedProcessEndpoints
 
             db.ReceivedProcesses.Add(entity);
 
-            // ✅ หักลบจำนวน Material.ReqmntQty ใน WorkOrder ด้วย ReceivedQty
-            foreach (var rm in entity.ReceivedMaterials)
-            {
-                var material = await db.Materials.FindAsync(rm.MaterialId);
-                if (material != null)
-                {
-                    material.ReqmntQty -= rm.ReceivedQty;
-                    if (material.ReqmntQty < 0) material.ReqmntQty = 0; // ป้องกันค่าติดลบ
-                }
-            }
-
             // ✅ อัปเดตสถานะ OrderProcess
             orderProcess.Status = "Delivered";
             await db.SaveChangesAsync();
@@ -170,33 +159,8 @@ public static class ReceivedProcessEndpoints
             if (entity is null)
                 return Results.NotFound();
 
-            // ✅ คืนจำนวน Material.ReqmntQty เดิมกลับก่อน
-            foreach (var oldRm in entity.ReceivedMaterials)
-            {
-                var material = await db.Materials.FindAsync(oldRm.MaterialId);
-                if (material != null)
-                {
-                    material.ReqmntQty += oldRm.ReceivedQty;
-                }
-            }
-
-            // ลบรายการเดิมทั้งหมดออกจาก Context เพื่อป้องกันปัญหา Foreign Key ขัดแย้ง
-            db.ReceivedMaterials.RemoveRange(entity.ReceivedMaterials);
-
             // ✅ อัปเดตข้อมูลใน entity
             entity.UpdateEntity(dto);
-
-            // ✅ หักลบจำนวน Material.ReqmntQty ตามค่าใหม่
-            foreach (var newRm in entity.ReceivedMaterials)
-            {
-                var material = await db.Materials.FindAsync(newRm.MaterialId);
-                if (material != null)
-                {
-                    material.ReqmntQty -= newRm.ReceivedQty;
-                    if (material.ReqmntQty < 0) material.ReqmntQty = 0; // ป้องกันค่าติดลบ
-                }
-            }
-
             await db.SaveChangesAsync();
 
             // ✅ โหลด OrderProcess รวมทุก process เพื่อ Broadcast
@@ -243,22 +207,9 @@ public static class ReceivedProcessEndpoints
             OrderProcessNotifier notifier   // ✅ เพิ่ม
         ) =>
         {
-            var entity = await db.ReceivedProcesses
-                .Include(rp => rp.ReceivedMaterials)
-                .FirstOrDefaultAsync(rp => rp.Id == id);
-                
+            var entity = await db.ReceivedProcesses.FindAsync(id);
             if (entity is null)
                 return Results.NotFound();
-
-            // ✅ คืนจำนวน Material.ReqmntQty กลับ
-            foreach (var rm in entity.ReceivedMaterials)
-            {
-                var material = await db.Materials.FindAsync(rm.MaterialId);
-                if (material != null)
-                {
-                    material.ReqmntQty += rm.ReceivedQty;
-                }
-            }
 
             db.ReceivedProcesses.Remove(entity);
 
