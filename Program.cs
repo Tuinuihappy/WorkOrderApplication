@@ -172,6 +172,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // ----------------------------------- 📡 Minimal API ------------------------------------------------------
+app.MapGroup("/api/dashboard").WithTags("Dashboard").MapDashboardEndpoints(); // Dashboard
 app.MapGroup("/api/workorders").WithTags("WorkOrders").MapWorkOrderEndpoints(); // WorkOrders
 app.MapGroup("/api/materials").WithTags("Materials").MapMaterialEndpoints(); // Materials
 app.MapGroup("/api/users").WithTags("Users").MapUserEndpoints(); // Users
