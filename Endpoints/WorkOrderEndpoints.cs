@@ -5,6 +5,7 @@ using WorkOrderApplication.API.Dtos;
 using WorkOrderApplication.API.Mappings;
 using WorkOrderApplication.API.Validators;
 using FluentValidation;
+using System.Text.Json;
 
 namespace WorkOrderApplication.API.Endpoints;
 
@@ -118,11 +119,29 @@ public static class WorkOrderEndpoints
             WorkOrderCreateDto dto,
             AppDbContext db,
             MesTdcClient mes,
-            IValidator<WorkOrderCreateDto> validator) =>
+            IValidator<WorkOrderCreateDto> validator,
+            ILoggerFactory loggerFactory) =>
         {
+            var logger = loggerFactory.CreateLogger("WorkOrderEndpoints.CreateWorkOrder");
+
+            // ✅ Log request body ที่เข้ามา
+            logger.LogInformation("[POST /api/workorders] Received request body: {RequestBody}",
+                JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
+
             var validation = await validator.ValidateAsync(dto);
             if (!validation.IsValid)
+            {
+                // ✅ Log validation errors อย่างละเอียด
+                var errors = validation.Errors.Select(e => new
+                {
+                    e.PropertyName,
+                    e.ErrorMessage,
+                    AttemptedValue = e.AttemptedValue?.ToString()
+                });
+                logger.LogWarning("[POST /api/workorders] Validation failed: {ValidationErrors}",
+                    JsonSerializer.Serialize(errors, new JsonSerializerOptions { WriteIndented = true }));
                 return Results.BadRequest(validation.Errors);
+            }
 
             var workOrder = dto.ToEntity();
 
@@ -133,22 +152,32 @@ public static class WorkOrderEndpoints
                 var raw = await mes.CallAsync(testType: "GET_MO_INFO", routingData: routingData);
 
                 if (raw.TryGetProperty("description", out var desc) &&
-                    desc.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                    desc.ValueKind == JsonValueKind.Object &&
                     desc.TryGetProperty("Default Line", out var lineProp) &&
-                    lineProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                    lineProp.ValueKind == JsonValueKind.String)
                 {
                     workOrder.DefaultLine = lineProp.GetString();
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // ⚠️ ถ้า MES ติดต่อไม่ได้ ไม่ block การสร้าง WorkOrder
                 // Background Service จะ sync ให้ภายหลัง
+                logger.LogWarning(ex, "[POST /api/workorders] MES call failed for Order={Order}, continuing without DefaultLine", dto.Order);
             }
 
-            db.WorkOrders.Add(workOrder);
-            await db.SaveChangesAsync();
+            try
+            {
+                db.WorkOrders.Add(workOrder);
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[POST /api/workorders] DB SaveChanges failed for Order={Order}", dto.Order);
+                throw;
+            }
 
+            logger.LogInformation("[POST /api/workorders] WorkOrder created successfully. Id={Id}, Order={Order}", workOrder.Id, workOrder.Order);
             return Results.Created($"/api/workorders/{workOrder.Id}", workOrder.ToDetailsDto());
         })
         .WithName("CreateWorkOrder")

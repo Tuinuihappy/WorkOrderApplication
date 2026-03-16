@@ -764,8 +764,8 @@ namespace WorkOrderApplication.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly?>("BasicFinishDate")
-                        .HasColumnType("date");
+                    b.Property<string>("BasicFinishDate")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()

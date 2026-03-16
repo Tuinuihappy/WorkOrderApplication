@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.OpenApi;
 using WorkOrderApplication.API.Data;
 using WorkOrderApplication.API.Endpoints;
 using FluentValidation;
-using FluentValidation.AspNetCore;
+
 using WorkOrderApplication.API.Validators;
 using WorkOrderApplication.API.Configurations;
 using WorkOrderApplication.API.Services;
@@ -29,7 +29,6 @@ builder.Services.AddSignalR(); // SignalR
 var connString = builder.Configuration.GetConnectionString("WorkOrder"); //Add database context
 builder.Services.AddNpgsql<AppDbContext>(connString, o => o.CommandTimeout(120)); // Use PostgreSQL Database with Timeout
 
-builder.Services.AddFluentValidationAutoValidation(); // Enable automatic validation in ASP.NET Core
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // Register all validators in the assembly
 
 // --------------------------------- 🧩 Custom Services -----------------------------------------------

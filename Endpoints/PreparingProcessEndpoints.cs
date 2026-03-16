@@ -55,15 +55,12 @@ public static class PreparingProcessEndpoints
             using var transaction = await db.Database.BeginTransactionAsync();
             try
             {
-                // ✅ Map DTO → Entity
-                var entity = dto.ToEntity();
-                db.PreparingProcesses.Add(entity);
-
                 // ✅ หา OrderProcess ที่เกี่ยวข้อง
                 var orderProcess = await db.OrderProcesses
                     .Include(op => op.WorkOrder)
                     .Include(op => op.CreatedBy)
                     .Include(op => op.ConfirmProcess)
+                    .Include(op => op.PreparingProcess) // <--- เพิ่มตรงนี้เพื่อให้เช็คได้ว่ามีของเก่าอยู่แล้วหรือไม่
                     .Include(op => op.ShipmentProcess)
                     .Include(op => op.ReceiveProcess)
                     .Include(op => op.CancelledProcess)
@@ -79,6 +76,10 @@ public static class PreparingProcessEndpoints
                     await transaction.RollbackAsync();
                     return Results.Conflict(new { error = $"OrderProcess {dto.OrderProcessId} is already prepared." });
                 }
+
+                // ✅ Map DTO → Entity (ต้องย้ายมาวางหลังเช็คแล้วว่าไม่มี PreparingProcess เดิม)
+                var entity = dto.ToEntity();
+                db.PreparingProcesses.Add(entity);
 
                 // ✅ อัปเดตสถานะ OrderProcess
                 orderProcess.Status = "In Transit"; // หรือ "Ready to Ship" ตาม workflow จริงของคุณ
