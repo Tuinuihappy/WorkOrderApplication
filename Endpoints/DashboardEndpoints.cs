@@ -95,7 +95,7 @@ public static class DashboardEndpoints
 
             // 5. Calculate Overall Totals and Status Breakdown
             var totalOrders = processes.Count;
-            var predefinedStatuses = new[] { "Order Placed", "Preparing", "In Transit", "Awaiting Pickup", "Delivered" };
+            var predefinedStatuses = new[] { "Order Placed", "Preparing", "In Transit", "Awaiting Pickup", "Delivered", "Cancelled" };
             var groupedStatuses = processes.GroupBy(p => p.Status).ToDictionary(g => g.Key, g => g.Count());
 
             var statusCounts = predefinedStatuses.Select(status => new DashboardStatusCountDto(
@@ -111,11 +111,13 @@ public static class DashboardEndpoints
 
             statusCounts.AddRange(otherCounts);
 
-            // 6. Calculate ShipmentMode Breakdown
+            // 6. Calculate ShipmentMode Breakdown (Only for "Delivered" status)
             var predefinedModes = new[] { "AMR", "Manual" };
             
-            // Only count those that have a ShipmentMode (i.e. have a ShipmentProcess)
-            var shippedProcesses = processes.Where(p => p.ShipmentMode != null).ToList();
+            // Only count those that have a ShipmentMode AND are Delivered
+            var shippedProcesses = processes
+                .Where(p => p.ShipmentMode != null && p.Status == "Delivered")
+                .ToList();
             
             // Rename ExternalApi to AMR
             var groupedModes = shippedProcesses
