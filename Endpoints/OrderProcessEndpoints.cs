@@ -197,6 +197,98 @@ public static class OrderProcessEndpoints
             return Results.Ok(response);
         });
 
+        // -------------------- GET /api/orderprocesses/today --------------------
+        group.MapGet("/today", async (
+            AppDbContext db,
+            int? page = null,
+            int? pageSize = null, // null = ดึงข้อมูลทั้งหมด
+            string? search = null // ✅ Global search
+        ) =>
+        {
+            var currentPage = (page ?? 1) < 1 ? 1 : (page ?? 1);
+
+            var ictNow = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7));
+            var todayStart = new DateTimeOffset(ictNow.Date, TimeSpan.FromHours(7)).UtcDateTime;
+            var todayEnd = todayStart.AddDays(1);
+
+            var query = db.OrderProcesses.AsNoTracking()
+                .Where(op => op.CreatedDate >= todayStart && op.CreatedDate < todayEnd)
+                .Include(op => op.CreatedBy)
+                .Include(op => op.WorkOrder)
+                .Include(op => op.ConfirmProcess)
+                .Include(op => op.PreparingProcess)
+                .Include(op => op.ShipmentProcess)
+                .Include(op => op.ReceiveProcess)
+                .Include(op => op.CancelledProcess)
+                .Include(op => op.ReturnProcess)
+                .AsSplitQuery()
+                .AsQueryable();
+
+            // ✅ Apply Global Search (Multi-field filter)
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var lowerSearch = search.ToLower();
+                int? searchId = int.TryParse(search, out var idVal) ? idVal : null;
+
+                query = query.Where(op =>
+                    (searchId.HasValue && op.Id == searchId.Value) || 
+                    op.OrderNumber.ToLower().Contains(lowerSearch) ||
+                    op.Status.ToLower().Contains(lowerSearch) ||
+                    (op.DestinationStation != null && op.DestinationStation.ToLower().Contains(lowerSearch)) || 
+                    op.WorkOrder.Order.ToLower().Contains(lowerSearch) ||
+                    op.CreatedBy.UserName.ToLower().Contains(lowerSearch) ||
+                    (op.WorkOrder.OrderType != null && op.WorkOrder.OrderType.ToLower().Contains(lowerSearch)) ||
+                    (op.WorkOrder.DefaultLine != null && op.WorkOrder.DefaultLine.ToLower().Contains(lowerSearch)) || 
+                    (op.ShipmentProcess != null && op.ShipmentProcess.SourceStation != null && op.ShipmentProcess.SourceStation.ToLower().Contains(lowerSearch)) ||
+                    (op.ShipmentProcess != null && op.ShipmentProcess.DestinationStation != null && op.ShipmentProcess.DestinationStation.ToLower().Contains(lowerSearch)) ||
+                    (op.ShipmentProcess != null && op.ShipmentProcess.ExecuteVehicleName != null && op.ShipmentProcess.ExecuteVehicleName.ToLower().Contains(lowerSearch))
+                );
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var getAll = !pageSize.HasValue;
+            var maxLimit = 1000;
+            
+            var size = getAll 
+                ? Math.Min(totalCount, maxLimit)
+                : (pageSize!.Value < 1 ? 10 : pageSize.Value);
+                
+            if (getAll && totalCount > maxLimit) {
+                getAll = false; 
+            }
+
+            query = query.OrderByDescending(op => op.CreatedDate);
+
+            if (!getAll)
+            {
+                query = query.Skip((currentPage - 1) * size).Take(size);
+            }
+
+            var orderProcesses = await query.ToListAsync();
+
+            var totalPages = size == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)size);
+
+            var response = new
+            {
+                Data = orderProcesses.Select(op => op.ToListDto()),
+                Pagination = new
+                {
+                    CurrentPage = getAll ? 1 : currentPage,
+                    PageSize = getAll ? totalCount : size,
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    HasPrevious = currentPage > 1,
+                    HasNext = currentPage < totalPages
+                },
+                Filters = new
+                {
+                    Search = search
+                }
+            };
+
+            return Results.Ok(response);
+        });
         // -------------------- GET /api/orderprocesses/{id} --------------------
         group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
         {
